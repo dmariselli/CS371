@@ -1,2 +1,2 @@
 # CS371
-Group Project with Alex Chou
+Group Project by Daniel Mariselli and Alex Chou
