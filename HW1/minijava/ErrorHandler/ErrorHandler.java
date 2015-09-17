@@ -19,16 +19,11 @@ public class ErrorHandler {
 
     public String getLongMessage(String s) {
     	try {
-	    	char[] letters = s.toCharArray();
-	    	StringBuffer sb = new StringBuffer();
-	    	int count = 1;
-	    	while (letters[count] != ']') {
-	    		sb.append(letters[count++]);
-	    	}
-	    	List<String> coord = Arrays.asList(sb.toString().split(","));
-	    	Integer row = Integer.parseInt(coord.get(0));
-	    	Integer col = Integer.parseInt(coord.get(1));
-	    	
+	    	String rowCol = s.substring(1, s.indexOf(']'));
+	    	String[] coord = rowCol.split(",");
+	    	Integer row = Integer.parseInt(coord[0]);
+	    	Integer col = Integer.parseInt(coord[1]);
+
     		LineNumberReader in = new LineNumberReader(new FileReader(filename));
     		for (int i = 1; i < row; i++) {
     			in.readLine();
@@ -36,20 +31,30 @@ public class ErrorHandler {
 
     		String problemLine = in.readLine();
 	    	char[] problemChars = problemLine.toCharArray();
-	    	StringBuffer spaces = new StringBuffer();
+	    	StringBuilder sb = new StringBuilder();
 	    	for (int i = 0; i < col-1; i++) {
 	    		if (problemChars[i] == '\t') {
-	    			spaces.append("\t");
+	    			sb.append("\t");
 	    		} else {
-	    			spaces.append(" ");
+	    			sb.append(" ");
 	    		}
 	    	}
-	    	sb = new StringBuffer();
-    		sb.append("Error during parsing: " + s + "\n");
-    		sb.append("The error was detected at line " + row + ", column " + col + "\n");
-    		sb.append("Here is line " + row + ". The carat mark (^) indicates where the error was detected." + "\n");
-    		sb.append(problemLine + "\n");
-    		sb.append(spaces.toString() + "^" + "\n");
+            String spaces = sb.toString();
+
+	    	sb = new StringBuilder();
+    		sb.append("Error during parsing: ");
+            sb.append(s);
+    		sb.append("\nThe error was detected at line ");
+            sb.append(row);
+            sb.append(", column ");
+            sb.append(col);
+    		sb.append("\nHere is line ");
+            sb.append(row);
+            sb.append(". The carat mark (^) indicates where the error was detected.\n");
+    		sb.append(problemLine);
+            sb.append("\n");
+    		sb.append(spaces);
+            sb.append("^\n");
     		longMessage = sb.toString();
     	} catch (Exception e) {
     		throw new UnsupportedOperationException();
