@@ -28,21 +28,22 @@ public class Typechecker {
     }
 
     public void phase1() {
-		Object o = (new Phase1(this));
-                //.process(root);
+        (new Phase1(this)).process(root);
     }
 
     public void createClassVar(String name, Type type, Token tok) {
-	throw new UnsupportedOperationException();
+        Var var = new Var(name, type, tok);
+        classVarMap.put(name, var);
     }
 
     public void createMethod(String name, Type returnType, 
 			     List<Type> paramTypes, Token tok) {
-	throw new UnsupportedOperationException();
+	    Method method = new Method(name, returnType, paramTypes, tok);
+        methodList.add(method);
     }
 
     public Type getType(TId idToken) {
-	throw new UnsupportedOperationException();
+	    return typeMap.get(idToken.toString());
     }
 
     public Type makeArrayType(Type t, Token tok) {
