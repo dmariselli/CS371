@@ -63,4 +63,56 @@ public class Typechecker {
         return arrayType;
     }
 
+    public boolean checkVarType(TId idToken) {
+        Type type = getType(idToken);
+        if (type!=null){
+            if (type!=Type.voidType) {
+                //Returns true if legal
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else{
+            return false;
+        }
+    }
+
+    public boolean checkMethodType(TId idToken) {
+        Type type = getType(idToken);
+        if (type!=null){
+                return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    public boolean checkIfVarDeclared(TId idToken){
+        if (classVarMap.get(idToken.getText())!=null){
+            //Already declared
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+
+    public boolean checkIfMethodDeclared(String name, Type returnType,
+                                         List<Type> paramTypes, Token tok){
+        Method temp = new Method(name, returnType, paramTypes, tok);
+        System.out.println("THe thing is");
+        System.out.println(temp.toString());
+        for (int i=0; i<methodList.size(); i++) {
+            System.out.println("The other thing is");
+            System.out.println(methodList.get(i).toString());
+            if (methodList.get(i).equals(temp)) {
+                //Already declared
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

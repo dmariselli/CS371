@@ -4,6 +4,7 @@ package minijava.Typechecker;
 
 import minijava.node.*;
 import minijava.Type.*;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -15,9 +16,8 @@ import java.util.ArrayList;
 - no void types in paramList
 - use actual proper types (typeMap check)
 - check proper return types
-
-
 */
+
 public class Phase1
 {
     private Typechecker typechecker;
@@ -55,11 +55,26 @@ public class Phase1
 
     ///////////////////////////////////////////////////////////////
     void process(AVarMaindecl n) {
+        TId typeId = ((AType)n.getType()).getId();
+        if (!typechecker.checkVarType(typeId)){
+            throw new TypecheckerException(typeId, "Variable cannot be declared with given type.");
+        }
+        if (!typechecker.checkIfVarDeclared(n.getId())){
+            throw new TypecheckerException(n.getId(), "Variable has already been declared.");
+        }
         typechecker.createClassVar(n.getId().getText(), process(n.getType()), n.getId());
     }
 
     ///////////////////////////////////////////////////////////////
     void process(AMethodMaindecl n) {
+        TId typeId = ((AType)n.getType()).getId();
+        if (!typechecker.checkMethodType(typeId)){
+            throw new TypecheckerException(typeId, "Method cannot be declared with given type.");
+        }
+        //@TODO Take process out and make sure it only happens once
+        if (!typechecker.checkIfMethodDeclared(n.getId().getText(), process(n.getType()), process(n.getParamlist()), n.getId())){
+            throw new TypecheckerException(n.getId(), "Method has already been declared.");
+        }
         typechecker.createMethod(n.getId().getText(), process(n.getType()), process(n.getParamlist()), n.getId());
     }
 
@@ -72,9 +87,18 @@ public class Phase1
     ///////////////////////////////////////////////////////////////
     List<Type> process(AListParamlist n) {
         List<Type> typeList = new ArrayList<>();
+        TId typeId = ((AType)n.getType()).getId();
+        if (!typechecker.checkVarType(typeId)){
+            throw new TypecheckerException(typeId, "Parameter cannot be declared with given type.");
+        }
         typeList.add(process(n.getType()));			// process(PType)
-	    for (PParam p : n.getParam())
-            typeList.add(process(p));				// process(PParam)
+	    for (PParam p : n.getParam()) {
+            typeId = (((AType) ((AParam) p).getType())).getId();
+            if (!typechecker.checkVarType(typeId)) {
+                throw new TypecheckerException(typeId, "Parameter cannot be declared with given type.");
+            }
+            typeList.add(process(p));                // process(PParam)
+        }
         return typeList;
     }
 
@@ -102,22 +126,14 @@ public class Phase1
     ///////////////////////////////////////////////////////////////
     Type process(AType n) {
         Type type = typechecker.getType(n.getId());
+//        if (!n.getEmptydim().isEmpty()){
+//            if (!typechecker.checkVarType(n.getId())){
+//                throw new TypecheckerException(n.getId(), "Invalid array basetype.");
+//            }
+//        }
         for (PEmptydim p : n.getEmptydim())
             type = typechecker.makeArrayType(type, n.getId());
         return type;
-    }
-
-    ///////////////////////////////////////////////////////////////
-    void process(PStmt n) {
-	if (n instanceof ADeclStmt) process((ADeclStmt)n);
-	else
-            throw new RuntimeException (this.getClass() +
-                ": unexpected subclass " + n.getClass() + " in process(PStmt)");
-    }
-
-    ///////////////////////////////////////////////////////////////
-    void process(ADeclStmt n) {
-        typechecker.createClassVar(n.getId().getText(), process(n.getType()), n.getId());
     }
 
     ///////////////////////////////////////////////////////////////

@@ -24,4 +24,11 @@ public class ArrayType extends Type {
         }
         return base + "[]" + stringBuffer.toString();
     }
+
+    public boolean equals(ArrayType at){
+        System.out.println("Arraytypes");
+        System.out.println(at);
+        System.out.println(this);
+        return baseType.equals(at.baseType);
+    }
 }
