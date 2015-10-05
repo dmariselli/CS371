@@ -35,7 +35,7 @@ public abstract class Type {
 	    return "null";
 	}
 	public boolean canAssignTo (Type t) {
-	    return t == this || /*t instanceof ArrayType ||*/
+	    return t == this || t instanceof ArrayType ||
 		t == stringType;
 	}
     }

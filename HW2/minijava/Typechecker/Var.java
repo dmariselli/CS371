@@ -18,7 +18,7 @@ public class Var {
 
     @Override
     public String toString() {
-        return name + " " + type + " " + null;
+        return name + " " + type + " " + tok;
     }
 
 }

@@ -37,6 +37,8 @@ public class Main2 {
 	    Start start = p.parse();
 	    Typechecker typechecker = new Typechecker(start);
 	    typechecker.phase1();
+		typechecker.printClassVarMap();
+        typechecker.printMethodList();
 	}
 	catch(LexerException e) {
 	    System.err.println(e);

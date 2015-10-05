@@ -31,23 +31,36 @@ public class Typechecker {
         (new Phase1(this)).process(root);
     }
 
+    public void printClassVarMap() {
+        for (String vars : classVarMap.keySet()) {
+            System.out.println(classVarMap.get(vars));
+        }
+    }
+
+    public void printMethodList() {
+        for (Method method : methodList) {
+            System.out.println(method);
+        }
+    }
+
     public void createClassVar(String name, Type type, Token tok) {
         Var var = new Var(name, type, tok);
         classVarMap.put(name, var);
     }
 
-    public void createMethod(String name, Type returnType, 
+    public void createMethod(String name, Type returnType,
 			     List<Type> paramTypes, Token tok) {
 	    Method method = new Method(name, returnType, paramTypes, tok);
         methodList.add(method);
     }
 
     public Type getType(TId idToken) {
-	    return typeMap.get(idToken.toString());
+	    return typeMap.get(idToken.getText());
     }
 
     public Type makeArrayType(Type t, Token tok) {
-	throw new UnsupportedOperationException();
+        Type arrayType = new ArrayType(t);
+        return arrayType;
     }
-	
+
 }
