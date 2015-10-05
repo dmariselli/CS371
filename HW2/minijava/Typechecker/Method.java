@@ -13,7 +13,6 @@ public class Method {
     List<Type> paramTypes;
     Token tok;
 
-    // TODO: What's the point of Token
     public Method(String name, Type returnType, List<Type> paramTypes, Token tok) {
         this.name = name;
         this.returnType = returnType;

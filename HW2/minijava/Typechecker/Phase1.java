@@ -7,6 +7,17 @@ import minijava.Type.*;
 import java.util.List;
 import java.util.ArrayList;
 
+/*TODO:
+- check if multiple variable declaration
+- reusing variable name
+- no void types for variable declaration
+- no null types in general
+- no void types in paramList
+- use actual proper types (typeMap check)
+- check proper return types
+
+
+*/
 public class Phase1
 {
     private Typechecker typechecker;
@@ -109,7 +120,6 @@ public class Phase1
         typechecker.createClassVar(n.getId().getText(), process(n.getType()), n.getId());
     }
 
-    // Do Not Touch
     ///////////////////////////////////////////////////////////////
     void process(PEmptydim n) {
         if (n instanceof AEmptydim) process((AEmptydim)n);
