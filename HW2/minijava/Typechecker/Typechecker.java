@@ -102,11 +102,7 @@ public class Typechecker {
     public boolean checkIfMethodDeclared(String name, Type returnType,
                                          List<Type> paramTypes, Token tok){
         Method temp = new Method(name, returnType, paramTypes, tok);
-        System.out.println("THe thing is");
-        System.out.println(temp.toString());
         for (int i=0; i<methodList.size(); i++) {
-            System.out.println("The other thing is");
-            System.out.println(methodList.get(i).toString());
             if (methodList.get(i).equals(temp)) {
                 //Already declared
                 return false;

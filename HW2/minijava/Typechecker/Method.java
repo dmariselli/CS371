@@ -26,16 +26,19 @@ public class Method {
     }
 
     public boolean equals(Method m){
-        System.out.println("Bools");
-        System.out.println(m.name.equals(this.name));
-        System.out.println(returnType.equals(m.returnType));
-        System.out.println(paramTypes.equals(m.paramTypes));
-        System.out.println("The thing");
-        for (int i=0; i<m.paramTypes.size() && i<paramTypes.size(); i++){
-            System.out.println(m.paramTypes.get(i).equals(this.paramTypes.get(i)));
+        return (m.name.equals(this.name) && listCompare(m.paramTypes));
+    }
+
+    public boolean listCompare(List<Type> other) {
+        if (paramTypes.size() != other.size()) {
+            return false;
         }
-        System.out.println("Thing done");
-        return (m.name.equals(this.name) && returnType.equals(m.returnType) && paramTypes.equals(m.paramTypes));
+        for (int i = 0; i < paramTypes.size(); i++) {
+            if(!paramTypes.get(i).equals(other.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

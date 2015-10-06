@@ -68,6 +68,11 @@ public class Phase1
     ///////////////////////////////////////////////////////////////
     void process(AMethodMaindecl n) {
         TId typeId = ((AType)n.getType()).getId();
+        if (!((AType)n.getType()).getEmptydim().isEmpty()){
+            if (!typechecker.checkVarType(typeId)){
+                throw new TypecheckerException(typeId, "Invalid array basetype.");
+            }
+        }
         if (!typechecker.checkMethodType(typeId)){
             throw new TypecheckerException(typeId, "Method cannot be declared with given type.");
         }
@@ -126,11 +131,6 @@ public class Phase1
     ///////////////////////////////////////////////////////////////
     Type process(AType n) {
         Type type = typechecker.getType(n.getId());
-//        if (!n.getEmptydim().isEmpty()){
-//            if (!typechecker.checkVarType(n.getId())){
-//                throw new TypecheckerException(n.getId(), "Invalid array basetype.");
-//            }
-//        }
         for (PEmptydim p : n.getEmptydim())
             type = typechecker.makeArrayType(type, n.getId());
         return type;

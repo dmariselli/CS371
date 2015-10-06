@@ -1,5 +1,7 @@
 package minijava.Type;
 
+import java.lang.Override;
+
 public abstract class Type {
 
     public final static Type intType = new IntType();
