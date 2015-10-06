@@ -8,16 +8,6 @@ import minijava.Type.*;
 import java.util.List;
 import java.util.ArrayList;
 
-/*TODO:
-- check if multiple variable declaration
-- reusing variable name
-- no void types for variable declaration
-- no null types in general
-- no void types in paramList
-- use actual proper types (typeMap check)
-- check proper return types
-*/
-
 public class Phase1
 {
     private Typechecker typechecker;
@@ -76,11 +66,12 @@ public class Phase1
         if (!typechecker.checkMethodType(typeId)){
             throw new TypecheckerException(typeId, "Method cannot be declared with given type.");
         }
-        //@TODO Take process out and make sure it only happens once
-        if (!typechecker.checkIfMethodDeclared(n.getId().getText(), process(n.getType()), process(n.getParamlist()), n.getId())){
+        Type type = process(n.getType());
+        List<Type> types = process(n.getParamlist());
+        if (!typechecker.checkIfMethodDeclared(n.getId().getText(), type, types, n.getId())){
             throw new TypecheckerException(n.getId(), "Method has already been declared.");
         }
-        typechecker.createMethod(n.getId().getText(), process(n.getType()), process(n.getParamlist()), n.getId());
+        typechecker.createMethod(n.getId().getText(), type, types, n.getId());
     }
 
     ///////////////////////////////////////////////////////////////

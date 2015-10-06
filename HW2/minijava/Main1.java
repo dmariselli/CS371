@@ -37,7 +37,7 @@ public class Main1 {
 		t = l.next();
 		System.out.println("Found token from " + t.getClass() 
 				   + ".\n   Lexeme is " + t);
-		//  System.out.println(errorHandler.getLongMessage (...) 
+		//  System.out.println(errorHandler.getLongMessage (...)
 	    } while (!(t instanceof EOF));
 	}
 	catch(LexerException e) {
