@@ -11,5 +11,4 @@ public class ExprType {
         type = t;
     }
 
-    public
 }

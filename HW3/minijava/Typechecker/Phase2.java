@@ -83,6 +83,7 @@ public class Phase2
 	for (PStmt p : n.getStmt())
 	    process(p);				// process(PStmt)
         n.getRbrace();				// yields TRbrace
+        typechecker.localST.decreaseScope();
 
         throw new UnsupportedOperationException ();     // remove when method is complete
     }
@@ -158,8 +159,8 @@ public class Phase2
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(PType n) {
-        if (n instanceof AType) process((AType)n);
+    Type process(PType n) {
+        if (n instanceof AType) return process((AType)n);
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PType)");
@@ -168,14 +169,15 @@ public class Phase2
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(AType n) {
-        n.getId();				// yields TId
-	for (PEmptydim p : n.getEmptydim())
-	    process(p);				// process(PEmptydim)
-        //@TODO THIS DON'T RETURN NUTIN
-        //I want it to return type so I can put things in the symbol table in ADeclStmt =(
+    Type process(AType n) {
+        Type type = typechecker.getType(n.getId());
+        for (PEmptydim p : n.getEmptydim())
+            type = typechecker.makeArrayType(type, n.getId());
+        return type;
+//        n.getId();				// yields TId
+//	for (PEmptydim p : n.getEmptydim())
+//	    process(p);				// process(PEmptydim)
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -208,9 +210,11 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     void process(ADeclStmt n) {
-        process(n.getType());			// process(PType)
+        Type type = process(n.getType());			// process(PType)
         n.getId();				// yields TId
         n.getSemi();				// yields TSemi
+        typechecker.localST.declareLocal(n.getId().getText(), type);
+
         //@TODO I WANT TO BE ABLE TO PUT VARIABLE INTO SYMBOL TABLE HERE
         //But I can't because I have no type T_T
         //Process is like void n all
@@ -319,7 +323,7 @@ public class Phase2
         n.getOr();				// yields TOr
         process(n.getRight());			// process(PExpr20)
         //TODO check bools
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -345,7 +349,7 @@ public class Phase2
         n.getAnd();				// yields TAnd
         process(n.getRight());			// process(PExpr30)
         //TODO check bools
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -372,7 +376,7 @@ public class Phase2
         n.getEq();				// yields TEq
         process(n.getRight());			// process(PExpr40)
         //TODO check bools
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -381,7 +385,7 @@ public class Phase2
         n.getNe();				// yields TNe
         process(n.getRight());			// process(PExpr40)
         //TODO check bools
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -410,7 +414,7 @@ public class Phase2
         n.getLt();				// yields TLt
         process(n.getRight());			// process(PExpr50)
         //TODO check bools
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -419,7 +423,7 @@ public class Phase2
         n.getLe();				// yields TLe
         process(n.getRight());			// process(PExpr50)
         //TODO check bools
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -428,7 +432,7 @@ public class Phase2
         n.getGe();				// yields TGe
         process(n.getRight());			// process(PExpr50)
         //TODO check bools
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -437,7 +441,7 @@ public class Phase2
         n.getGt();				// yields TGt
         process(n.getRight());			// process(PExpr50)
         //TODO check bools
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -464,7 +468,7 @@ public class Phase2
         n.getPlus();				// yields TPlus
         process(n.getRight());			// process(PTerm)
         //TODO check bools
-        return new ExprType(null, intType);
+        return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -473,7 +477,7 @@ public class Phase2
         n.getMinus();				// yields TMinus
         process(n.getRight());			// process(PTerm)
         //TODO check bools
-        return new ExprType(null, intType);
+        return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -501,7 +505,7 @@ public class Phase2
         n.getTimes();				// yields TTimes
         process(n.getRight());			// process(PFactor)
         //TODO check values
-        return new ExprType(null, intType);
+        return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -510,7 +514,7 @@ public class Phase2
         n.getDiv();				// yields TDiv
         process(n.getRight());			// process(PFactor)
         //TODO check values
-        return new ExprType(null, intType);
+        return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -519,7 +523,7 @@ public class Phase2
         n.getMod();				// yields TMod
         process(n.getRight());			// process(PFactor)
         //TODO check values
-        return new ExprType(null, intType);
+        return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -558,7 +562,7 @@ public class Phase2
         n.getDot();				// yields TDot
         n.getLength();				// yields TLength
         //TODO check values
-        return new ExprType(null, intType);
+        return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -569,7 +573,7 @@ public class Phase2
         n.getLparen();				// yields TLparen
         n.getRparen();				// yields TRparen
         //TODO check values
-        return new ExprType(null, intType);
+        return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -624,35 +628,35 @@ public class Phase2
     ExprType process(AIconstPrimary2 n) {
         n.getIconst();				// yields TIconst
         // TODO check values
-        return new ExprType(null, intType);
+        return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ASconstPrimary2 n) {
         n.getSconst();				// yields TSconst
         // TODO check values
-        return new ExprType(null, stringType);
+        return new ExprType(null, Type.stringType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ANullPrimary2 n) {
         n.getNull();				// yields TNull
         // TODO check values
-        return new ExprType(null, nullType);
+        return new ExprType(null, Type.nullType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ATruePrimary2 n) {
         n.getTrue();				// yields TTrue
         // TODO check values
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AFalsePrimary2 n) {
         n.getFalse();				// yields TFalse
         // TODO check values
-        return new ExprType(null, booleanType);
+        return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
