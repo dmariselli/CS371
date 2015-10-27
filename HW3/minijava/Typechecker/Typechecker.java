@@ -12,17 +12,17 @@ public class Typechecker {
     Start root;
 
     Map<String, Type> globalST = new HashMap<>();
+    LocalST localST = new LocalST();
+
     public class LocalST {
 
-        Map<String, Type> localST = new HashMap<>();
+        Map<String, Type> localSTMap = new HashMap<>();
         List<List<String>> scope = new ArrayList<>();
 
-        public LocalST() {
-            scope.add(new ArrayList<String>());
-        }
+//        public LocalST() {scope.add(new ArrayList<String>());}
 
         public Type lookup(String name) {
-            return localST.get(name);
+            return localSTMap.get(name);
         }
         public void increaseScope() {
             scope.add(new ArrayList<String>());
@@ -30,13 +30,13 @@ public class Typechecker {
         void decreaseScope(){
             List<String> inner = scope.get(scope.size()-1);
             for (String n : inner) {
-                localST.remove(n);
+                localSTMap.remove(n);
             }
             scope.remove(scope.size()-1);
         }
         void declareLocal(String s, Type v){
             scope.get(scope.size()-1).add(s);
-            localST.put(s, v);
+            localSTMap.put(s, v);
         }
     }
 
