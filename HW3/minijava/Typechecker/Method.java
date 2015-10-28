@@ -20,6 +20,16 @@ public class Method {
         this.tok = tok;
     }
 
+    public String getName() {
+        return this.name;
+    }
+
+    public Type getReturnType(){ return this.returnType; }
+
+    public List<Type> getParamTypes() {
+        return this.paramTypes;
+    }
+
     @Override
     public String toString(){
         return name + " " + returnType + " " + paramTypes.toString() + " " + tok;

@@ -10,5 +10,10 @@ public class ExprType {
         expr = e;
         type = t;
     }
-
+    public Type getType() {
+        return this.type;
+    }
+    public Expr getExpr() {
+        return this.expr;
+    }
 }

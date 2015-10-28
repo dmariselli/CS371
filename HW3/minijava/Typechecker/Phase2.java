@@ -2,6 +2,8 @@
 
 package minijava.Typechecker;
 
+import java.util.List;
+import java.util.ArrayList;
 import minijava.node.*;
 import minijava.Type.*;
 
@@ -164,8 +166,6 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PType)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -213,14 +213,10 @@ public class Phase2
         Type type = process(n.getType());			// process(PType)
         n.getId();				// yields TId
         n.getSemi();				// yields TSemi
-        typechecker.localST.declareLocal(n.getId().getText(), type);
-
-        //@TODO I WANT TO BE ABLE TO PUT VARIABLE INTO SYMBOL TABLE HERE
-        //But I can't because I have no type T_T
-        //Process is like void n all
-        //Type thing is AType
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
+        boolean declared = typechecker.localST.declareLocal(n.getId().getText(), type);
+        if (!declared) {
+            throw new TypecheckerException(n.getId(), "A variable of the same name has already been declared.");
+        }
     }
 
     ///////////////////////////////////////////////////////////////
@@ -295,10 +291,14 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AAssignExpr n) {
-        return process(n.getLhs());			// process(PLhs)  <- this one
-        n.getAssign();				// yields TAssign
-        process(n.getExpr());			// process(PExpr)  < not this one
-        throw new UnsupportedOperationException ();     // remove when method is complete
+        ExprType lhs = process(n.getLhs());			// process(PLhs)  <- this one
+        ExprType rhs = process(n.getExpr());			// process(PExpr)  < not this one
+        if (!(lhs.getType().equals(rhs.getType()))){
+            //TODO error
+            //TODO FIND ID TOKEN FOR ERROR
+            throw new TypecheckerException(null, "Incompatible types.");
+        }
+        return lhs;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -314,7 +314,6 @@ public class Phase2
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PExpr10)");
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -340,7 +339,6 @@ public class Phase2
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PExpr20)");
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -367,7 +365,6 @@ public class Phase2
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PExpr30)");
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -405,7 +402,6 @@ public class Phase2
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PExpr40)");
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -459,7 +455,6 @@ public class Phase2
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PExpr50)");
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -496,7 +491,6 @@ public class Phase2
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PTerm)");
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -541,7 +535,6 @@ public class Phase2
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PFactor)");
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -584,7 +577,6 @@ public class Phase2
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PPrimary)");
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -599,6 +591,7 @@ public class Phase2
         //TODO check values
         //TODO put value in exprType assuming it's value
 //        return new ExprType(null, );
+        return new ExprType(null, typechecker.getType(n.getId()));
     }
 
     ///////////////////////////////////////////////////////////////
@@ -621,7 +614,6 @@ public class Phase2
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PPrimary2)");
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -663,16 +655,37 @@ public class Phase2
     ExprType process(AParensPrimary2 n) {
         n.getLparen();				// yields TLparen
         return process(n.getExpr());			// process(PExpr)
-        n.getRparen();				// yields TRparen
+//        n.getRparen();				// yields TRparen
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ACallPrimary2 n) {
         n.getId();				// yields TId
         n.getLparen();				// yields TLparen
+        List<ExprType> typeList = new ArrayList<>();
         if (n.getArglist() != null)
-            process(n.getArglist());		// process(PArglist)
+            typeList = process(n.getArglist());		// process(PArglist)
         n.getRparen();				// yields TRparen
+        Method method = typechecker.findMethod(n.getId().getText());
+        // TODO change everything :)
+        // find method based on given id, the length of the arglist, and the types of the arglist. There should only be
+        // one matching method, if any.
+        if (method == null) {
+            // TODO error
+            throw new TypecheckerException(n.getId(), "Method not declared.");
+        }
+        List<Type> paramTypes = method.getParamTypes();
+        if (paramTypes.size() != typeList.size()) {
+            // TODO error
+            throw new TypecheckerException(n.getId(), "Cannot find symbol.");
+        }
+        for (int i=0; i<typeList.size(); i++){
+            if (!typeList.get(i).getType().equals(paramTypes.get(i))) {
+                //TODO error
+            }
+        }
+        return new ExprType(null, method.getReturnType());
+
         // TODO check values
         // TODO lookup on ID :)
         // TODO lookup on argument list :))
@@ -692,8 +705,6 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PArrayref)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -711,13 +722,14 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     ExprType process(APrimaryArrayref n) {
-        process(n.getPrimary2());			// process(PPrimary2)
+        ExprType arrayType = process(n.getPrimary2());			// process(PPrimary2)
         n.getLbrack();				// yields TLbrack
-        process(n.getExpr());			// process(PExpr)
+        ExprType inner = process(n.getExpr());			// process(PExpr)
         n.getRbrack();				// yields TRbrack
-        // TODO check values
-        // TODO check pprimary is arrayref
-//        return new ExprType(null, whatever the array wants to be);
+        if (inner.getType() != Type.intType) {
+            throw new TypecheckerException(null, "Incompatible type.");
+        }// TODO pass it an actual token ^^ instead of null
+        return new ExprType(null, arrayType.getType());
     }
 
     ///////////////////////////////////////////////////////////////
@@ -727,16 +739,16 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PLhs)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AIdLhs n) {
         n.getId();				// yields TId
-        // TODO symbol table lookup of type
-        // return that ^^
-
+        Type lhsType = typechecker.localST.lookup(n.getId().getText());
+        if (lhsType == null) {
+            throw new TypecheckerException(n.getId(), "Cannot find symbol.");
+        }
+        return new ExprType(null, lhsType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -744,42 +756,35 @@ public class Phase2
         return process(n.getArrayref());			// process(PArrayref)
     }
 
-    // ignore this one
     ///////////////////////////////////////////////////////////////
-    void process(PArglist n) {
-        if (n instanceof AListArglist) process((AListArglist)n);
-	else 
+    List<ExprType> process(PArglist n) {
+        if (n instanceof AListArglist) return process((AListArglist)n);
+	    else
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PArglist)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
-    // ignore this one
-    ///////////////////////////////////////////////////////////////
-    void process(AListArglist n) {
-        process(n.getExpr());			// process(PExpr)
-	for (PArg p : n.getArg())
-	    process(p);				// process(PArg)
 
-        throw new UnsupportedOperationException ();     // remove when method is complete
+    ///////////////////////////////////////////////////////////////
+    List<ExprType> process(AListArglist n) {
+        List<ExprType> typeList = new ArrayList<>();
+        typeList.add(process(n.getExpr()));			// process(PExpr)
+        for (PArg p : n.getArg())
+            typeList.add(process(p));				// process(PArg)
+        return typeList;
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(PArg n) {
         if (n instanceof AArg) return process((AArg)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	    else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PArg)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AArg n) {
         n.getComma();				// yields TComma
         return process(n.getExpr());			// process(PExpr)
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
     // ignore this one
     ///////////////////////////////////////////////////////////////

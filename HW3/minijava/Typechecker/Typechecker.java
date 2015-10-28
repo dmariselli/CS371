@@ -19,8 +19,6 @@ public class Typechecker {
         Map<String, Type> localSTMap = new HashMap<>();
         List<List<String>> scope = new ArrayList<>();
 
-//        public LocalST() {scope.add(new ArrayList<String>());}
-
         public Type lookup(String name) {
             return localSTMap.get(name);
         }
@@ -34,9 +32,13 @@ public class Typechecker {
             }
             scope.remove(scope.size()-1);
         }
-        void declareLocal(String s, Type v){
-            scope.get(scope.size()-1).add(s);
+        boolean declareLocal(String s, Type v){
+            if (localSTMap.containsKey(s)) {
+                return false;
+            }
             localSTMap.put(s, v);
+            scope.get(scope.size()-1).add(s);
+            return true;
         }
     }
 
@@ -85,6 +87,15 @@ public class Typechecker {
 			     List<Type> paramTypes, Token tok) {
 	    Method method = new Method(name, returnType, paramTypes, tok);
         methodList.add(method);
+    }
+
+    public Method findMethod(String name) {
+        for (Method method : methodList) {
+            if (method.getName().equals(name)) {
+                return method;
+            }
+        }
+        return null;
     }
 
     public Type getType(TId idToken) {
