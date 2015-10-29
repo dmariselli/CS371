@@ -29,11 +29,6 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     void process(PProgram n) {
         if (n instanceof AProgram) process((AProgram)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
-                ": unexpected subclass " + n.getClass() + " in process(PProgram)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -42,22 +37,15 @@ public class Phase2
         n.getClasstok();				// yields TClasstok
         n.getId();				// yields TId
         n.getLbrace();				// yields TLbrace
-	for (PMaindecl p : n.getMaindecl())
-	    process(p);				// process(PMaindecl)
+        for (PMaindecl p : n.getMaindecl())
+            process(p);				// process(PMaindecl)
         n.getRbrace();				// yields TRbrace
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     void process(PMaindecl n) {
         if (n instanceof AVarMaindecl) process((AVarMaindecl)n);
 	else if (n instanceof AMethodMaindecl) process((AMethodMaindecl)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
-                ": unexpected subclass " + n.getClass() + " in process(PMaindecl)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -67,8 +55,7 @@ public class Phase2
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
         n.getSemi();				// yields TSemi
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
+        typechecker.globalST.put(n.getId().getText(), process(n.getType()));
     }
 
     ///////////////////////////////////////////////////////////////
@@ -81,50 +68,40 @@ public class Phase2
         process(n.getParamlist());			// process(PParamlist)
         n.getRparen();				// yields TRparen
         n.getLbrace();				// yields TLbrace
-        typechecker.localST.increaseScope();
-	for (PStmt p : n.getStmt())
-	    process(p);				// process(PStmt)
+//        typechecker.localST.increaseScope();
+        for (PStmt p : n.getStmt())
+            process(p);				// process(PStmt)
         n.getRbrace();				// yields TRbrace
-        typechecker.localST.decreaseScope();
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
+//        typechecker.localST.decreaseScope();
     }
 
     ///////////////////////////////////////////////////////////////
     void process(PParamlist n) {
         if (n instanceof AListParamlist) process((AListParamlist)n);
-	else if (n instanceof AEmptyParamlist) process((AEmptyParamlist)n);
-	else 
+        else if (n instanceof AEmptyParamlist) process((AEmptyParamlist)n);
+        else
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PParamlist)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     void process(AListParamlist n) {
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
-	for (PParam p : n.getParam())
-	    process(p);				// process(PParam)
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
+        for (PParam p : n.getParam())
+            process(p);				// process(PParam)
     }
 
     ///////////////////////////////////////////////////////////////
     void process(AEmptyParamlist n) {
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     void process(PParam n) {
         if (n instanceof AParam) process((AParam)n);
-	else 
+	    else
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PParam)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -132,8 +109,6 @@ public class Phase2
         n.getComma();				// yields TComma
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -143,21 +118,15 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PPrivacy)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     void process(APublicPrivacy n) {
         n.getPublic();				// yields TPublic
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     void process(ABlankPrivacy n) {
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -174,10 +143,6 @@ public class Phase2
         for (PEmptydim p : n.getEmptydim())
             type = typechecker.makeArrayType(type, n.getId());
         return type;
-//        n.getId();				// yields TId
-//	for (PEmptydim p : n.getEmptydim())
-//	    process(p);				// process(PEmptydim)
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -193,19 +158,18 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PStmt)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     void process(AWhileStmt n) {
+        // TODO typecheck boolean
         n.getWhile();				// yields TWhile
         n.getLparen();				// yields TLparen
-        process(n.getExpr());			// process(PExpr)
+        if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
+        //@TODO Check to see if this error token is too ratchet
+            throw new TypecheckerException(n.getLparen(), "Incompatible type");
         n.getRparen();				// yields TRparen
         process(n.getStmt());			// process(PStmt)
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -222,42 +186,41 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     void process(ABlockStmt n) {
         n.getLbrace();				// yields TLbrace
-	for (PStmt p : n.getStmt())
-	    process(p);				// process(PStmt)
+        typechecker.localST.increaseScope();
+        for (PStmt p : n.getStmt())
+            process(p);				// process(PStmt)
         n.getRbrace();				// yields TRbrace
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
+        typechecker.localST.decreaseScope();
     }
 
     ///////////////////////////////////////////////////////////////
     void process(AIfStmt n) {
+        // TODO typecheck boolean
         n.getIf();				// yields TIf
         n.getLparen();				// yields TLparen
-        process(n.getExpr());			// process(PExpr)
+        if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
+            //@TODO Check to see if this error token is too ratchet
+            throw new TypecheckerException(n.getLparen(), "Incompatible type");
         n.getRparen();				// yields TRparen
         process(n.getThenclause());			// process(PStmt)
         n.getElse();				// yields TElse
         process(n.getElseclause());			// process(PStmt)
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     void process(AExprStmt n) {
+        // TODO return ExprType?  I don't think we do.  Not sure what we'd do with it-Alex
         process(n.getExpr());			// process(PExpr)
         n.getSemi();				// yields TSemi
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     void process(AReturnStmt n) {
+        // TODO return type, figure out how to check the return type against the expected return type
         n.getReturn();				// yields TReturn
         if (n.getExpr() != null)
             process(n.getExpr());		// process(PExpr)
         n.getSemi();				// yields TSemi
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
@@ -267,19 +230,13 @@ public class Phase2
         process(n.getExpr());			// process(PExpr)
         n.getRparen();				// yields TRparen
         n.getSemi();				// yields TSemi
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
     ///////////////////////////////////////////////////////////////
     void process(AEmptyStmt n) {
         n.getSemi();				// yields TSemi
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
-    // Everything below this should return ExprType
-    // return new ExprType (null, *type*);
     ///////////////////////////////////////////////////////////////
     ExprType process(PExpr n) {
         if (n instanceof AAssignExpr) return process((AAssignExpr)n);
@@ -291,10 +248,9 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AAssignExpr n) {
-        ExprType lhs = process(n.getLhs());			// process(PLhs)  <- this one
-        ExprType rhs = process(n.getExpr());			// process(PExpr)  < not this one
+        ExprType lhs = process(n.getLhs());			// process(PLhs)
+        ExprType rhs = process(n.getExpr());			// process(PExpr)
         if (!(lhs.getType().equals(rhs.getType()))){
-            //TODO error
             //TODO FIND ID TOKEN FOR ERROR
             throw new TypecheckerException(null, "Incompatible types.");
         }
@@ -313,14 +269,17 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PExpr10)");
-
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AOrExpr10 n) {
-        process(n.getLeft());			// process(PExpr10)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr10)
         n.getOr();				// yields TOr
-        process(n.getRight());			// process(PExpr20)
+        Type typeRHS = process(n.getRight()).getType();			// process(PExpr20)
+        if ((!typeLHS.equals(Type.booleanType)) || (!typeRHS.equals(Type.booleanType))){
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
@@ -343,9 +302,13 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AAndExpr20 n) {
-        process(n.getLeft());			// process(PExpr20)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr20)
         n.getAnd();				// yields TAnd
-        process(n.getRight());			// process(PExpr30)
+        Type typeRHS = process(n.getRight()).getType();			// process(PExpr30)
+        if ((!typeLHS.equals(Type.booleanType)) || (!typeRHS.equals(Type.booleanType))){
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
@@ -364,23 +327,30 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PExpr30)");
-
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AEqExpr30 n) {
-        process(n.getLeft());			// process(PExpr30)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr30)
         n.getEq();				// yields TEq
-        process(n.getRight());			// process(PExpr40)
+        Type typeRHS = process(n.getRight()).getType();			// process(PExpr40)
+        if (!typeLHS.equals(typeRHS)){
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ANeExpr30 n) {
-        process(n.getLeft());			// process(PExpr30)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr30)
         n.getNe();				// yields TNe
-        process(n.getRight());			// process(PExpr40)
+        Type typeRHS = process(n.getRight()).getType();			// process(PExpr40)
+        if (!typeLHS.equals(typeRHS)){
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
@@ -388,7 +358,6 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(AExprExpr30 n) {
         return process(n.getExpr40());			// process(PExpr40)
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -406,36 +375,52 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ALtExpr40 n) {
-        process(n.getLeft());			// process(PExpr40)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr40)
         n.getLt();				// yields TLt
-        process(n.getRight());			// process(PExpr50)
+        Type typeRHS = process(n.getRight()).getType();			// process(PExpr50)
+        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType))){
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ALeExpr40 n) {
-        process(n.getLeft());			// process(PExpr40)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr40)
         n.getLe();				// yields TLe
-        process(n.getRight());			// process(PExpr50)
+        Type typeRHS = process(n.getRight()).getType();			// process(PExpr50)
+        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType))){
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AGeExpr40 n) {
-        process(n.getLeft());			// process(PExpr40)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr40)
         n.getGe();				// yields TGe
-        process(n.getRight());			// process(PExpr50)
+        Type typeRHS = process(n.getRight()).getType();			// process(PExpr50)
+        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType))){
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AGtExpr40 n) {
-        process(n.getLeft());			// process(PExpr40)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr40)
         n.getGt();				// yields TGt
-        process(n.getRight());			// process(PExpr50)
+        Type typeRHS = process(n.getRight()).getType();			// process(PExpr50)
+        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType))){
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
@@ -443,7 +428,6 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(AExprExpr40 n) {
         return process(n.getExpr50());			// process(PExpr50)
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -454,23 +438,34 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PExpr50)");
-
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(APlusExpr50 n) {
-        process(n.getLeft());			// process(PExpr50)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr50)
         n.getPlus();				// yields TPlus
-        process(n.getRight());			// process(PTerm)
+        Type typeRHS = process(n.getRight()).getType();			// process(PTerm)
+        if (!(((typeLHS.equals(Type.intType)) && (typeRHS.equals(Type.intType)))
+             || ((typeLHS.equals(Type.stringType)) && (typeRHS.equals(Type.stringType)))))
+            {
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
-        return new ExprType(null, Type.intType);
+        //typeLHS and typeRHS should be the same time if returning
+        return new ExprType(null, typeLHS);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AMinusExpr50 n) {
-        process(n.getLeft());			// process(PExpr50)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr50)
         n.getMinus();				// yields TMinus
-        process(n.getRight());			// process(PTerm)
+        Type typeRHS = process(n.getRight()).getType();			// process(PTerm)
+        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
+        {
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check bools
         return new ExprType(null, Type.intType);
     }
@@ -490,32 +485,46 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PTerm)");
-
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ATimesTerm n) {
-        process(n.getLeft());			// process(PTerm)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PTerm)
         n.getTimes();				// yields TTimes
-        process(n.getRight());			// process(PFactor)
+        Type typeRHS = process(n.getRight()).getType();			// process(PFactor)
+        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
+        {
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check values
         return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ADivTerm n) {
-        process(n.getLeft());			// process(PTerm)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PTerm)
         n.getDiv();				// yields TDiv
-        process(n.getRight());			// process(PFactor)
+        Type typeRHS = process(n.getRight()).getType();			// process(PFactor)
+        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
+        {
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check values
         return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AModTerm n) {
-        process(n.getLeft());			// process(PTerm)
+        Type typeLHS = process(n.getLeft()).getType();			// process(PTerm)
         n.getMod();				// yields TMod
-        process(n.getRight());			// process(PFactor)
+        Type typeRHS = process(n.getRight()).getType();			// process(PFactor)
+        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
+        {
+            //@TODO Find the token for this exception
+            throw new TypecheckerException(null, "Incompatible types");
+        }
         //TODO check values
         return new ExprType(null, Type.intType);
     }
@@ -534,7 +543,6 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PFactor)");
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -545,8 +553,14 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(AIdFactor n) {
         n.getId();				// yields TId
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
+        Type type = typechecker.localST.lookup(n.getId().getText());
+        if (type==null){
+            type = typechecker.globalST.get(n.getId().getText());
+            if (type==null){
+                throw new TypecheckerException(n.getId(), "Variable not declared");
+            }
+        }
+        return new ExprType(null, type);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -576,7 +590,6 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PPrimary)");
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -597,7 +610,6 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(APrimary2Primary n) {
         return process(n.getPrimary2());			// process(PPrimary2)
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -613,7 +625,6 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PPrimary2)");
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -685,7 +696,6 @@ public class Phase2
             }
         }
         return new ExprType(null, method.getReturnType());
-
         // TODO check values
         // TODO lookup on ID :)
         // TODO lookup on argument list :))
