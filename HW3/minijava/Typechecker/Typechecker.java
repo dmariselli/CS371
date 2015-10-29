@@ -16,6 +16,7 @@ public class Typechecker {
 
     public class LocalST {
 
+
         Map<String, Type> localSTMap = new HashMap<>();
         List<List<String>> scope = new ArrayList<>();
 
@@ -89,13 +90,14 @@ public class Typechecker {
         methodList.add(method);
     }
 
-    public Method findMethod(String name) {
+    public List<Method> findMethods(String name) {
+        List<Method> methodList = new ArrayList<>();
         for (Method method : methodList) {
             if (method.getName().equals(name)) {
-                return method;
+                methodList.add(method);
             }
         }
-        return null;
+        return methodList;
     }
 
     public Type getType(TId idToken) {
@@ -108,7 +110,7 @@ public class Typechecker {
     }
 
     public boolean checkVarType(TId idToken) {
-        Type type = getType(idToken);
+    Type type = getType(idToken);
         if (type!=null){
             if (type!=Type.voidType) {
                 //Returns true if legal

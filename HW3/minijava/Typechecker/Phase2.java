@@ -9,6 +9,7 @@ import minijava.Type.*;
 
 public class Phase2
 {
+    // TODO Print symbol table
 
     private Typechecker typechecker;
 
@@ -68,11 +69,11 @@ public class Phase2
         process(n.getParamlist());			// process(PParamlist)
         n.getRparen();				// yields TRparen
         n.getLbrace();				// yields TLbrace
-//        typechecker.localST.increaseScope();
+        typechecker.localST.increaseScope();
         for (PStmt p : n.getStmt())
             process(p);				// process(PStmt)
         n.getRbrace();				// yields TRbrace
-//        typechecker.localST.decreaseScope();
+        typechecker.localST.decreaseScope();
     }
 
     ///////////////////////////////////////////////////////////////
@@ -142,6 +143,7 @@ public class Phase2
         Type type = typechecker.getType(n.getId());
         for (PEmptydim p : n.getEmptydim())
             type = typechecker.makeArrayType(type, n.getId());
+        System.out.println("Type is "+type);
         return type;
     }
 
@@ -162,7 +164,6 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     void process(AWhileStmt n) {
-        // TODO typecheck boolean
         n.getWhile();				// yields TWhile
         n.getLparen();				// yields TLparen
         if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
@@ -175,6 +176,8 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     void process(ADeclStmt n) {
         Type type = process(n.getType());			// process(PType)
+        System.out.println(n.getId().getText());
+        System.out.println(type);
         n.getId();				// yields TId
         n.getSemi();				// yields TSemi
         boolean declared = typechecker.localST.declareLocal(n.getId().getText(), type);
@@ -195,7 +198,6 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     void process(AIfStmt n) {
-        // TODO typecheck boolean
         n.getIf();				// yields TIf
         n.getLparen();				// yields TLparen
         if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
@@ -209,7 +211,6 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     void process(AExprStmt n) {
-        // TODO return ExprType?  I don't think we do.  Not sure what we'd do with it-Alex
         process(n.getExpr());			// process(PExpr)
         n.getSemi();				// yields TSemi
     }
@@ -251,8 +252,7 @@ public class Phase2
         ExprType lhs = process(n.getLhs());			// process(PLhs)
         ExprType rhs = process(n.getExpr());			// process(PExpr)
         if (!(lhs.getType().equals(rhs.getType()))){
-            //TODO FIND ID TOKEN FOR ERROR
-            throw new TypecheckerException(null, "Incompatible types.");
+            throw new TypecheckerException(n.getAssign(), "Incompatible types.");
         }
         return lhs;
     }
@@ -277,10 +277,8 @@ public class Phase2
         n.getOr();				// yields TOr
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr20)
         if ((!typeLHS.equals(Type.booleanType)) || (!typeRHS.equals(Type.booleanType))){
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getOr(), "Incompatible types");
         }
-        //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
@@ -306,17 +304,14 @@ public class Phase2
         n.getAnd();				// yields TAnd
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr30)
         if ((!typeLHS.equals(Type.booleanType)) || (!typeRHS.equals(Type.booleanType))){
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getAnd(), "Incompatible types");
         }
-        //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AExprExpr20 n) {
         return process(n.getExpr30());			// process(PExpr30)
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -335,10 +330,8 @@ public class Phase2
         n.getEq();				// yields TEq
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr40)
         if (!typeLHS.equals(typeRHS)){
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getEq(), "Incompatible types");
         }
-        //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
@@ -348,10 +341,8 @@ public class Phase2
         n.getNe();				// yields TNe
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr40)
         if (!typeLHS.equals(typeRHS)){
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getNe(), "Incompatible types");
         }
-        //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
@@ -379,10 +370,8 @@ public class Phase2
         n.getLt();				// yields TLt
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr50)
         if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType))){
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getLt(), "Incompatible types");
         }
-        //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
@@ -392,10 +381,8 @@ public class Phase2
         n.getLe();				// yields TLe
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr50)
         if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType))){
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getLe(), "Incompatible types");
         }
-        //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
@@ -405,10 +392,8 @@ public class Phase2
         n.getGe();				// yields TGe
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr50)
         if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType))){
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getGe(), "Incompatible types");
         }
-        //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
@@ -418,10 +403,8 @@ public class Phase2
         n.getGt();				// yields TGt
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr50)
         if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType))){
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getGt(), "Incompatible types");
         }
-        //TODO check bools
         return new ExprType(null, Type.booleanType);
     }
 
@@ -448,11 +431,8 @@ public class Phase2
         if (!(((typeLHS.equals(Type.intType)) && (typeRHS.equals(Type.intType)))
              || ((typeLHS.equals(Type.stringType)) && (typeRHS.equals(Type.stringType)))))
             {
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getPlus(), "Incompatible types");
         }
-        //TODO check bools
-        //typeLHS and typeRHS should be the same time if returning
         return new ExprType(null, typeLHS);
     }
 
@@ -463,10 +443,8 @@ public class Phase2
         Type typeRHS = process(n.getRight()).getType();			// process(PTerm)
         if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
         {
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getMinus(), "Incompatible types");
         }
-        //TODO check bools
         return new ExprType(null, Type.intType);
     }
 
@@ -494,10 +472,8 @@ public class Phase2
         Type typeRHS = process(n.getRight()).getType();			// process(PFactor)
         if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
         {
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getTimes(), "Incompatible types");
         }
-        //TODO check values
         return new ExprType(null, Type.intType);
     }
 
@@ -508,10 +484,8 @@ public class Phase2
         Type typeRHS = process(n.getRight()).getType();			// process(PFactor)
         if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
         {
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getDiv(), "Incompatible types");
         }
-        //TODO check values
         return new ExprType(null, Type.intType);
     }
 
@@ -522,10 +496,8 @@ public class Phase2
         Type typeRHS = process(n.getRight()).getType();			// process(PFactor)
         if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
         {
-            //@TODO Find the token for this exception
-            throw new TypecheckerException(null, "Incompatible types");
+            throw new TypecheckerException(n.getMod(), "Incompatible types");
         }
-        //TODO check values
         return new ExprType(null, Type.intType);
     }
 
@@ -568,7 +540,9 @@ public class Phase2
         n.getId();				// yields TId
         n.getDot();				// yields TDot
         n.getLength();				// yields TLength
-        //TODO check values
+        if (!(typechecker.localST.lookup(n.getId().getText()) instanceof ArrayType)) {
+            throw new TypecheckerException(n.getId(), "Is not an array");
+        }
         return new ExprType(null, Type.intType);
     }
 
@@ -579,7 +553,10 @@ public class Phase2
         n.getLength();				// yields TLength
         n.getLparen();				// yields TLparen
         n.getRparen();				// yields TRparen
-        //TODO check values
+        // TODO why .length()? instead of .size()
+        if (!((typechecker.localST.lookup(n.getId().getText())) instanceof ArrayType)) {
+            throw new TypecheckerException(n.getId(), "Is not an array");
+        }
         return new ExprType(null, Type.intType);
     }
 
@@ -597,13 +574,16 @@ public class Phase2
         n.getNew();				// yields TNew
         n.getId();				// yields TId
         n.getLbrack();				// yields TLbrack
-        process(n.getExpr());			// process(PExpr)
+        ExprType withinBrackets = process(n.getExpr());			// process(PExpr)
         n.getRbrack();				// yields TRbrack
-	for (PEmptydim p : n.getEmptydim())
-	    process(p);				// process(PEmptydim)
-        //TODO check values
-        //TODO put value in exprType assuming it's value
-//        return new ExprType(null, );
+        for (PEmptydim p : n.getEmptydim())
+            process(p);				// process(PEmptydim)
+        if (!withinBrackets.getType().equals(Type.intType)) {
+            throw new TypecheckerException(n.getId(), "No number in brackets");
+        }
+        if (!typechecker.checkVarType(n.getId())) {
+            throw new TypecheckerException(n.getId(), "Invalid type");
+        }
         return new ExprType(null, typechecker.getType(n.getId()));
     }
 
@@ -630,35 +610,30 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(AIconstPrimary2 n) {
         n.getIconst();				// yields TIconst
-        // TODO check values
         return new ExprType(null, Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ASconstPrimary2 n) {
         n.getSconst();				// yields TSconst
-        // TODO check values
         return new ExprType(null, Type.stringType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ANullPrimary2 n) {
         n.getNull();				// yields TNull
-        // TODO check values
         return new ExprType(null, Type.nullType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ATruePrimary2 n) {
         n.getTrue();				// yields TTrue
-        // TODO check values
         return new ExprType(null, Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AFalsePrimary2 n) {
         n.getFalse();				// yields TFalse
-        // TODO check values
         return new ExprType(null, Type.booleanType);
     }
 
@@ -673,34 +648,25 @@ public class Phase2
     ExprType process(ACallPrimary2 n) {
         n.getId();				// yields TId
         n.getLparen();				// yields TLparen
-        List<ExprType> typeList = new ArrayList<>();
+        List<ExprType> exprTypeList = new ArrayList<>();
         if (n.getArglist() != null)
-            typeList = process(n.getArglist());		// process(PArglist)
+            exprTypeList = process(n.getArglist());		// process(PArglist)
         n.getRparen();				// yields TRparen
-        Method method = typechecker.findMethod(n.getId().getText());
-        // TODO change everything :)
-        // find method based on given id, the length of the arglist, and the types of the arglist. There should only be
-        // one matching method, if any.
-        if (method == null) {
-            // TODO error
-            throw new TypecheckerException(n.getId(), "Method not declared.");
+        List<Method> methodList = typechecker.findMethods(n.getId().getText());
+        List<Type> typeList = new ArrayList<>();
+        for (ExprType exprType : exprTypeList){
+            typeList.add(exprType.getType());
         }
-        List<Type> paramTypes = method.getParamTypes();
-        if (paramTypes.size() != typeList.size()) {
-            // TODO error
-            throw new TypecheckerException(n.getId(), "Cannot find symbol.");
-        }
-        for (int i=0; i<typeList.size(); i++){
-            if (!typeList.get(i).getType().equals(paramTypes.get(i))) {
-                //TODO error
+        Method foundMethod = null;
+        for (Method method : methodList) {
+            if (method.listCompare(typeList)) {
+                foundMethod = method;
             }
         }
-        return new ExprType(null, method.getReturnType());
-        // TODO check values
-        // TODO lookup on ID :)
-        // TODO lookup on argument list :))
-
-//        return new ExprType(null, whatever the method returns);
+        if (foundMethod == null) {
+            throw new TypecheckerException(n.getId(), "Method not declared.");
+        }
+        return new ExprType(null, foundMethod.getReturnType());
     }
 
     ///////////////////////////////////////////////////////////////
@@ -721,13 +687,19 @@ public class Phase2
     ExprType process(ANameArrayref n) {
         n.getId();				// yields TId
         n.getLbrack();				// yields TLbrack
-        process(n.getExpr());			// process(PExpr)
+        ExprType withinBrackets = process(n.getExpr());			// process(PExpr)
         n.getRbrack();				// yields TRbrack
-        // TODO check type of array
-        // TODO check expression returns int
-        // TODO check values
-//        return new ExprType(null, type of array);
-        throw new UnsupportedOperationException ();     // remove when method is complete
+        if (!withinBrackets.getType().equals(Type.intType)) {
+            throw new TypecheckerException(n.getId(), "Not a number within the brackets");
+        }
+        Type type = typechecker.localST.lookup(n.getId().getText());
+        if (type == null || (!(type instanceof ArrayType))) {
+            type = typechecker.globalST.get(n.getId().getText());
+            if (type == null || (!(type instanceof ArrayType))) {
+                throw new TypecheckerException(null, "Error 404 Variable not found");
+            }
+        }
+        return new ExprType(null, type);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -736,9 +708,14 @@ public class Phase2
         n.getLbrack();				// yields TLbrack
         ExprType inner = process(n.getExpr());			// process(PExpr)
         n.getRbrack();				// yields TRbrack
+        //i dont think we need to check here
+//        if (!(typechecker.localST.lookup(n.getId().getText()) instanceof ArrayType)) {
+//            throw new TypecheckerException(n.getId(), "Is not an array");
+//        }
         if (inner.getType() != Type.intType) {
-            throw new TypecheckerException(null, "Incompatible type.");
-        }// TODO pass it an actual token ^^ instead of null
+            throw new TypecheckerException(n.getLbrack(), "Incompatible type.");
+        }
+
         return new ExprType(null, arrayType.getType());
     }
 
