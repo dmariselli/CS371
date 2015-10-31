@@ -40,6 +40,7 @@ public class Main2 {
 	    typechecker.phase2();
 		typechecker.printClassVarMap();
         typechecker.printMethodList();
+		typechecker.printLocalST();
 	}
 	catch(LexerException e) {
 	    System.err.println(e);

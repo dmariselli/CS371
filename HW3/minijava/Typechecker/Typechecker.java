@@ -15,8 +15,8 @@ public class Typechecker {
     LocalST localST = new LocalST();
 
     public class LocalST {
-
-
+        List<String> symbolString = new ArrayList<String>();
+        List<Type> symbolType = new ArrayList<Type>();
         Map<String, Type> localSTMap = new HashMap<>();
         List<List<String>> scope = new ArrayList<>();
 
@@ -38,6 +38,8 @@ public class Typechecker {
                 return false;
             }
             localSTMap.put(s, v);
+            symbolString.add(s);
+            symbolType.add(v);
             scope.get(scope.size()-1).add(s);
             return true;
         }
@@ -48,16 +50,16 @@ public class Typechecker {
     List<Method>         methodList;
 
     public Typechecker (Start s) {
-	root = s;
+        root = s;
 
-	typeMap = new HashMap<String,Type>();
-	typeMap.put ("int", Type.intType);
-	typeMap.put ("String", Type.stringType);
-	typeMap.put ("void", Type.voidType);
-	typeMap.put ("boolean", Type.booleanType);
+        typeMap = new HashMap<String,Type>();
+        typeMap.put ("int", Type.intType);
+        typeMap.put ("String", Type.stringType);
+        typeMap.put ("void", Type.voidType);
+        typeMap.put ("boolean", Type.booleanType);
 
-	classVarMap = new HashMap<String,Var>();
-	methodList = new LinkedList<Method>();
+        classVarMap = new HashMap<String,Var>();
+        methodList = new LinkedList<Method>();
     }
 
     public void phase1() {
@@ -65,6 +67,13 @@ public class Typechecker {
     }
     public void phase2() {
         (new Phase2(this)).process(root);
+    }
+
+    public void printLocalST() {
+        System.out.println("Called");
+        for (int i = 0; i < localST.symbolString.size(); i++) {
+            System.out.println(localST.symbolString.get(i) + " - " + localST.symbolType.get(i));
+        }
     }
 
     public void printClassVarMap() {
@@ -90,14 +99,23 @@ public class Typechecker {
         methodList.add(method);
     }
 
-    public List<Method> findMethods(String name) {
-        List<Method> methodList = new ArrayList<>();
+    public List<Method> findMethods(String name, List<Type> typeList) {
+        List<Method> foundMethods = new ArrayList<>();
         for (Method method : methodList) {
             if (method.getName().equals(name)) {
-                methodList.add(method);
+                boolean isCompatible = true;
+                List<Type> methodTypes = method.getParamTypes();
+                for (int i = 0; i < typeList.size(); i++) {
+                    if (!typeList.get(i).canAssignTo(methodTypes.get(i))) {
+                        isCompatible = false;
+                    }
+                }
+                if (isCompatible) {
+                    foundMethods.add(method);
+                }
             }
         }
-        return methodList;
+        return foundMethods;
     }
 
     public Type getType(TId idToken) {

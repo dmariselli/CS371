@@ -228,7 +228,9 @@ public class Phase2
     void process(APrintStmt n) {
         n.getPrint();				// yields TPrint
         n.getLparen();				// yields TLparen
-        process(n.getExpr());			// process(PExpr)
+        if (process(n.getExpr()).getType().equals(Type.voidType)) {
+            throw new TypecheckerException(n.getLparen(), "type not allowed here");
+        }
         n.getRparen();				// yields TRparen
         n.getSemi();				// yields TSemi
     }
@@ -652,21 +654,17 @@ public class Phase2
         if (n.getArglist() != null)
             exprTypeList = process(n.getArglist());		// process(PArglist)
         n.getRparen();				// yields TRparen
-        List<Method> methodList = typechecker.findMethods(n.getId().getText());
         List<Type> typeList = new ArrayList<>();
         for (ExprType exprType : exprTypeList){
             typeList.add(exprType.getType());
         }
-        Method foundMethod = null;
-        for (Method method : methodList) {
-            if (method.listCompare(typeList)) {
-                foundMethod = method;
-            }
+        List<Method> methodList = typechecker.findMethods(n.getId().getText(), typeList);
+        if (methodList.size() > 1) {
+            throw new TypecheckerException(n.getId(), "Ambiguous method");
+        } else if (methodList.isEmpty()) {
+            throw new TypecheckerException(n.getId(), "Method not declared");
         }
-        if (foundMethod == null) {
-            throw new TypecheckerException(n.getId(), "Method not declared.");
-        }
-        return new ExprType(null, foundMethod.getReturnType());
+        return new ExprType(null, methodList.get(0).getReturnType());
     }
 
     ///////////////////////////////////////////////////////////////
@@ -696,7 +694,7 @@ public class Phase2
         if (type == null || (!(type instanceof ArrayType))) {
             type = typechecker.globalST.get(n.getId().getText());
             if (type == null || (!(type instanceof ArrayType))) {
-                throw new TypecheckerException(null, "Error 404 Variable not found");
+                throw new TypecheckerException(n.getLbrack(), "Error 404 Variable not found");
             }
         }
         return new ExprType(null, type);
