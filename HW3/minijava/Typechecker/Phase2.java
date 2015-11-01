@@ -56,7 +56,7 @@ public class Phase2
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
         n.getSemi();				// yields TSemi
-        typechecker.globalST.put(n.getId().getText(), process(n.getType()));
+        typechecker.createClassVar(n.getId().getText(), process(n.getType()));
     }
 
     ///////////////////////////////////////////////////////////////
@@ -66,10 +66,10 @@ public class Phase2
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
         n.getLparen();				// yields TLparen
+        typechecker.localST.increaseScope();
         process(n.getParamlist());			// process(PParamlist)
         n.getRparen();				// yields TRparen
         n.getLbrace();				// yields TLbrace
-        typechecker.localST.increaseScope();
         for (PStmt p : n.getStmt())
             process(p);				// process(PStmt)
         n.getRbrace();				// yields TRbrace
@@ -89,6 +89,7 @@ public class Phase2
     void process(AListParamlist n) {
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
+        typechecker.localST.declareLocal(n.getId().getText(), process(n.getType()));
         for (PParam p : n.getParam())
             process(p);				// process(PParam)
     }
@@ -110,6 +111,7 @@ public class Phase2
         n.getComma();				// yields TComma
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
+        typechecker.localST.declareLocal(n.getId().getText(), process(n.getType()));
     }
 
     ///////////////////////////////////////////////////////////////
@@ -430,8 +432,8 @@ public class Phase2
         Type typeLHS = process(n.getLeft()).getType();			// process(PExpr50)
         n.getPlus();				// yields TPlus
         Type typeRHS = process(n.getRight()).getType();			// process(PTerm)
-        if (!(((typeLHS.equals(Type.intType)) && (typeRHS.equals(Type.intType)))
-             || ((typeLHS.equals(Type.stringType)) && (typeRHS.equals(Type.stringType)))))
+        if (!((typeLHS.equals(Type.intType) || typeLHS.equals(Type.stringType))
+                && (typeRHS.equals(Type.intType) || typeRHS.equals(Type.stringType))))
             {
             throw new TypecheckerException(n.getPlus(), "Incompatible types");
         }
@@ -527,14 +529,14 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(AIdFactor n) {
         n.getId();				// yields TId
-        Type type = typechecker.localST.lookup(n.getId().getText());
-        if (type==null){
-            type = typechecker.globalST.get(n.getId().getText());
-            if (type==null){
+        Var var = typechecker.localST.lookup(n.getId().getText());
+        if (var==null){
+            var = typechecker.globalST.get(n.getId().getText());
+            if (var==null){
                 throw new TypecheckerException(n.getId(), "Variable not declared");
             }
         }
-        return new ExprType(null, type);
+        return new ExprType(null, var.getType());
     }
 
     ///////////////////////////////////////////////////////////////
@@ -542,7 +544,7 @@ public class Phase2
         n.getId();				// yields TId
         n.getDot();				// yields TDot
         n.getLength();				// yields TLength
-        if (!(typechecker.localST.lookup(n.getId().getText()) instanceof ArrayType)) {
+        if (!(typechecker.localST.lookup(n.getId().getText()).getType() instanceof ArrayType)) {
             throw new TypecheckerException(n.getId(), "Is not an array");
         }
         return new ExprType(null, Type.intType);
@@ -556,7 +558,7 @@ public class Phase2
         n.getLparen();				// yields TLparen
         n.getRparen();				// yields TRparen
         // TODO why .length()? instead of .size()
-        if (!((typechecker.localST.lookup(n.getId().getText())) instanceof ArrayType)) {
+        if (!((typechecker.localST.lookup(n.getId().getText())).getType() instanceof ArrayType)) {
             throw new TypecheckerException(n.getId(), "Is not an array");
         }
         return new ExprType(null, Type.intType);
@@ -690,9 +692,9 @@ public class Phase2
         if (!withinBrackets.getType().equals(Type.intType)) {
             throw new TypecheckerException(n.getId(), "Not a number within the brackets");
         }
-        Type type = typechecker.localST.lookup(n.getId().getText());
+        Type type = typechecker.localST.lookup(n.getId().getText()).getType();
         if (type == null || (!(type instanceof ArrayType))) {
-            type = typechecker.globalST.get(n.getId().getText());
+            type = typechecker.globalST.get(n.getId().getText()).getType();
             if (type == null || (!(type instanceof ArrayType))) {
                 throw new TypecheckerException(n.getLbrack(), "Error 404 Variable not found");
             }
@@ -729,11 +731,14 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(AIdLhs n) {
         n.getId();				// yields TId
-        Type lhsType = typechecker.localST.lookup(n.getId().getText());
-        if (lhsType == null) {
-            throw new TypecheckerException(n.getId(), "Cannot find symbol.");
+        Var lhsVar = typechecker.localST.lookup(n.getId().getText());
+        if (lhsVar == null) {
+            lhsVar = typechecker.globalST.get(n.getId().getText());
+            if (lhsVar == null) {
+                throw new TypecheckerException(n.getId(), "Cannot find symbol.");
+            }
         }
-        return new ExprType(null, lhsType);
+        return new ExprType(null, lhsVar.getType());
     }
 
     ///////////////////////////////////////////////////////////////

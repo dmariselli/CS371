@@ -16,6 +16,14 @@ public class Var {
         this.tok = tok;
     }
 
+    public String getString() {
+        return name;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
     @Override
     public String toString() {
         return name + " " + type + " " + tok;

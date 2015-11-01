@@ -11,17 +11,19 @@ public class Typechecker {
 
     Start root;
 
-    Map<String, Type> globalST = new HashMap<>();
+    Map<String, Var> globalST = new HashMap<>();
     LocalST localST = new LocalST();
 
     public class LocalST {
-        List<String> symbolString = new ArrayList<String>();
-        List<Type> symbolType = new ArrayList<Type>();
-        Map<String, Type> localSTMap = new HashMap<>();
+        List<Var> symbolVar = new ArrayList<Var>();
+        Map<String, Var> localSTMap = new HashMap<>();
         List<List<String>> scope = new ArrayList<>();
 
-        public Type lookup(String name) {
-            return localSTMap.get(name);
+        public Var lookup(String name) {
+            if (localSTMap.get(name) != null) {
+                return localSTMap.get(name);
+            }
+            return null;
         }
         public void increaseScope() {
             scope.add(new ArrayList<String>());
@@ -33,20 +35,24 @@ public class Typechecker {
             }
             scope.remove(scope.size()-1);
         }
-        boolean declareLocal(String s, Type v){
+        boolean declareLocal(String name, Type type) {
+            return declareLocal(name, type, null);
+        }
+        boolean declareLocal(String name, Type type, Token tok) {
+            return declareLocal(name, new Var(name, type, tok));
+        }
+        boolean declareLocal(String s, Var v){
             if (localSTMap.containsKey(s)) {
                 return false;
             }
             localSTMap.put(s, v);
-            symbolString.add(s);
-            symbolType.add(v);
+            symbolVar.add(v);
             scope.get(scope.size()-1).add(s);
             return true;
         }
     }
 
     HashMap<String,Type> typeMap;
-    HashMap<String,Var>  classVarMap;
     List<Method>         methodList;
 
     public Typechecker (Start s) {
@@ -58,7 +64,6 @@ public class Typechecker {
         typeMap.put ("void", Type.voidType);
         typeMap.put ("boolean", Type.booleanType);
 
-        classVarMap = new HashMap<String,Var>();
         methodList = new LinkedList<Method>();
     }
 
@@ -70,15 +75,14 @@ public class Typechecker {
     }
 
     public void printLocalST() {
-        System.out.println("Called");
-        for (int i = 0; i < localST.symbolString.size(); i++) {
-            System.out.println(localST.symbolString.get(i) + " - " + localST.symbolType.get(i));
+        for (int i = 0; i < localST.symbolVar.size(); i++) {
+            System.out.println(localST.symbolVar.get(i).getString() + " - " + localST.symbolVar.get(i).getType());
         }
     }
 
-    public void printClassVarMap() {
-        for (String vars : classVarMap.keySet()) {
-            System.out.println(classVarMap.get(vars));
+    public void printGlobalST() {
+        for (String vars : globalST.keySet()) {
+            System.out.println(vars + " - " + globalST.get(vars).getType());
         }
     }
 
@@ -88,9 +92,12 @@ public class Typechecker {
         }
     }
 
+    public void createClassVar(String name, Type type) {
+        createClassVar(name, type, null);
+    }
+
     public void createClassVar(String name, Type type, Token tok) {
-        Var var = new Var(name, type, tok);
-        classVarMap.put(name, var);
+        globalST.put(name, new Var(name, type, tok));
     }
 
     public void createMethod(String name, Type returnType,
@@ -154,7 +161,7 @@ public class Typechecker {
     }
 
     public boolean checkIfVarDeclared(TId idToken){
-        if (classVarMap.get(idToken.getText())!=null){
+        if (globalST.get(idToken.getText())!=null){
             //Already declared
             return false;
         }

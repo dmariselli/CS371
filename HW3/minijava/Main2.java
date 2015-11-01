@@ -38,7 +38,7 @@ public class Main2 {
 	    Typechecker typechecker = new Typechecker(start);
 	    typechecker.phase1();
 	    typechecker.phase2();
-		typechecker.printClassVarMap();
+		typechecker.printGlobalST();
         typechecker.printMethodList();
 		typechecker.printLocalST();
 	}
