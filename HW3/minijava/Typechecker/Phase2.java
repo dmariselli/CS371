@@ -9,8 +9,6 @@ import minijava.Type.*;
 
 public class Phase2
 {
-    // TODO Print symbol table
-
     private Typechecker typechecker;
 
     Phase2(Typechecker typechecker) {
@@ -61,6 +59,7 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     void process(AMethodMaindecl n) {
+        typechecker.nextMethod();
         process(n.getPrivacy());			// process(PPrivacy)
         n.getStatic();				// yields TStatic
         process(n.getType());			// process(PType)
@@ -169,10 +168,11 @@ public class Phase2
         n.getWhile();				// yields TWhile
         n.getLparen();				// yields TLparen
         if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
-        //@TODO Check to see if this error token is too ratchet
             throw new TypecheckerException(n.getLparen(), "Incompatible type");
         n.getRparen();				// yields TRparen
+        typechecker.localST.increaseScope();
         process(n.getStmt());			// process(PStmt)
+        typechecker.localST.decreaseScope();
     }
 
     ///////////////////////////////////////////////////////////////
@@ -191,11 +191,9 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     void process(ABlockStmt n) {
         n.getLbrace();				// yields TLbrace
-        typechecker.localST.increaseScope();
         for (PStmt p : n.getStmt())
             process(p);				// process(PStmt)
         n.getRbrace();				// yields TRbrace
-        typechecker.localST.decreaseScope();
     }
 
     ///////////////////////////////////////////////////////////////
@@ -203,12 +201,15 @@ public class Phase2
         n.getIf();				// yields TIf
         n.getLparen();				// yields TLparen
         if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
-            //@TODO Check to see if this error token is too ratchet
             throw new TypecheckerException(n.getLparen(), "Incompatible type");
         n.getRparen();				// yields TRparen
+        typechecker.localST.increaseScope();
         process(n.getThenclause());			// process(PStmt)
+        typechecker.localST.decreaseScope();
         n.getElse();				// yields TElse
+        typechecker.localST.increaseScope();
         process(n.getElseclause());			// process(PStmt)
+        typechecker.localST.decreaseScope();
     }
 
     ///////////////////////////////////////////////////////////////
@@ -219,10 +220,17 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     void process(AReturnStmt n) {
-        // TODO return type, figure out how to check the return type against the expected return type
         n.getReturn();				// yields TReturn
+        Type type = Type.voidType;
         if (n.getExpr() != null)
-            process(n.getExpr());		// process(PExpr)
+            type = process(n.getExpr()).getType();		// process(PExpr)
+        Type returnType = typechecker.getCurrentMethod().getReturnType();
+        if (returnType.equals(Type.voidType) && type.equals(returnType)){
+            return;
+        }
+        if (!type.canAssignTo(returnType)) {
+            throw new TypecheckerException(n.getReturn(), "Return type is not valid");
+        }
         n.getSemi();				// yields TSemi
     }
 
@@ -255,7 +263,7 @@ public class Phase2
     ExprType process(AAssignExpr n) {
         ExprType lhs = process(n.getLhs());			// process(PLhs)
         ExprType rhs = process(n.getExpr());			// process(PExpr)
-        if (!(lhs.getType().equals(rhs.getType()))){
+        if (!(rhs.getType().canAssignTo(lhs.getType()))){
             throw new TypecheckerException(n.getAssign(), "Incompatible types.");
         }
         return lhs;
@@ -289,7 +297,6 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(AExprExpr10 n) {
         return process(n.getExpr20());			// process(PExpr20)
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -333,7 +340,7 @@ public class Phase2
         Type typeLHS = process(n.getLeft()).getType();			// process(PExpr30)
         n.getEq();				// yields TEq
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr40)
-        if (!typeLHS.equals(typeRHS)){
+        if ((!typeLHS.canAssignTo(typeRHS)) && (!typeRHS.canAssignTo(typeLHS))){
             throw new TypecheckerException(n.getEq(), "Incompatible types");
         }
         return new ExprType(null, Type.booleanType);
@@ -344,7 +351,7 @@ public class Phase2
         Type typeLHS = process(n.getLeft()).getType();			// process(PExpr30)
         n.getNe();				// yields TNe
         Type typeRHS = process(n.getRight()).getType();			// process(PExpr40)
-        if (!typeLHS.equals(typeRHS)){
+        if ((!typeLHS.canAssignTo(typeRHS)) && (!typeRHS.canAssignTo(typeLHS))){
             throw new TypecheckerException(n.getNe(), "Incompatible types");
         }
         return new ExprType(null, Type.booleanType);
@@ -365,7 +372,6 @@ public class Phase2
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PExpr40)");
-
     }
 
     ///////////////////////////////////////////////////////////////
@@ -432,12 +438,26 @@ public class Phase2
         Type typeLHS = process(n.getLeft()).getType();			// process(PExpr50)
         n.getPlus();				// yields TPlus
         Type typeRHS = process(n.getRight()).getType();			// process(PTerm)
-        if (!((typeLHS.equals(Type.intType) || typeLHS.equals(Type.stringType))
-                && (typeRHS.equals(Type.intType) || typeRHS.equals(Type.stringType))))
-            {
-            throw new TypecheckerException(n.getPlus(), "Incompatible types");
+        Type type = typeLHS;
+        if (typeLHS.equals(Type.stringType)){
+            if (typeRHS.equals(Type.voidType)){
+                throw new TypecheckerException(n.getPlus(), "Incompatible types");
+            }
         }
-        return new ExprType(null, typeLHS);
+        else if (typeRHS.equals(Type.stringType)){
+            if (typeLHS.equals(Type.voidType)){
+                throw new TypecheckerException(n.getPlus(), "Incompatible types");
+            }
+        }
+        else if (typeLHS.equals(Type.intType)){
+            if (!( typeRHS.equals(Type.intType))){
+                throw new TypecheckerException(n.getPlus(), "Incompatible types");
+            }
+        }
+        if (!typeLHS.equals(typeRHS)){
+            type = Type.stringType;
+        }
+        return new ExprType(null, type);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -557,9 +577,8 @@ public class Phase2
         n.getLength();				// yields TLength
         n.getLparen();				// yields TLparen
         n.getRparen();				// yields TRparen
-        // TODO why .length()? instead of .size()
-        if (!((typechecker.localST.lookup(n.getId().getText())).getType() instanceof ArrayType)) {
-            throw new TypecheckerException(n.getId(), "Is not an array");
+        if (!((typechecker.localST.lookup(n.getId().getText())).getType().equals(Type.stringType))) {
+            throw new TypecheckerException(n.getId(), "Is not a String");
         }
         return new ExprType(null, Type.intType);
     }
@@ -580,15 +599,19 @@ public class Phase2
         n.getLbrack();				// yields TLbrack
         ExprType withinBrackets = process(n.getExpr());			// process(PExpr)
         n.getRbrack();				// yields TRbrack
-        for (PEmptydim p : n.getEmptydim())
+        Type type = typechecker.getType(n.getId());
+        type = typechecker.makeArrayType(type, n.getId());
+        for (PEmptydim p : n.getEmptydim()) {
             process(p);				// process(PEmptydim)
+            type = typechecker.makeArrayType(type, n.getId());
+        }
         if (!withinBrackets.getType().equals(Type.intType)) {
             throw new TypecheckerException(n.getId(), "No number in brackets");
         }
         if (!typechecker.checkVarType(n.getId())) {
             throw new TypecheckerException(n.getId(), "Invalid type");
         }
-        return new ExprType(null, typechecker.getType(n.getId()));
+        return new ExprType(null, type);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -644,8 +667,8 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(AParensPrimary2 n) {
         n.getLparen();				// yields TLparen
+        n.getRparen();				// yields TRparen
         return process(n.getExpr());			// process(PExpr)
-//        n.getRparen();				// yields TRparen
     }
 
     ///////////////////////////////////////////////////////////////
@@ -692,14 +715,19 @@ public class Phase2
         if (!withinBrackets.getType().equals(Type.intType)) {
             throw new TypecheckerException(n.getId(), "Not a number within the brackets");
         }
-        Type type = typechecker.localST.lookup(n.getId().getText()).getType();
-        if (type == null || (!(type instanceof ArrayType))) {
-            type = typechecker.globalST.get(n.getId().getText()).getType();
-            if (type == null || (!(type instanceof ArrayType))) {
-                throw new TypecheckerException(n.getLbrack(), "Error 404 Variable not found");
+        Var var = typechecker.localST.lookup(n.getId().getText());
+        if (var == null || (!(var.getType() instanceof ArrayType))) {
+            var = typechecker.globalST.get(n.getId().getText());
+            if (var == null || (!(var.getType() instanceof ArrayType))) {
+                throw new TypecheckerException(n.getLbrack(), "Variable not found");
             }
         }
-        return new ExprType(null, type);
+        if (var.getType() instanceof ArrayType){
+            return new ExprType(null, ((ArrayType) var.getType()).getBaseType());
+        }
+        else {
+            return new ExprType(null, var.getType());
+        }
     }
 
     ///////////////////////////////////////////////////////////////
@@ -708,15 +736,10 @@ public class Phase2
         n.getLbrack();				// yields TLbrack
         ExprType inner = process(n.getExpr());			// process(PExpr)
         n.getRbrack();				// yields TRbrack
-        //i dont think we need to check here
-//        if (!(typechecker.localST.lookup(n.getId().getText()) instanceof ArrayType)) {
-//            throw new TypecheckerException(n.getId(), "Is not an array");
-//        }
         if (inner.getType() != Type.intType) {
             throw new TypecheckerException(n.getLbrack(), "Incompatible type.");
         }
-
-        return new ExprType(null, arrayType.getType());
+        return new ExprType(null, ((ArrayType) arrayType.getType()).getBaseType());
     }
 
     ///////////////////////////////////////////////////////////////
@@ -776,23 +799,19 @@ public class Phase2
         n.getComma();				// yields TComma
         return process(n.getExpr());			// process(PExpr)
     }
-    // ignore this one
+
     ///////////////////////////////////////////////////////////////
     void process(PEmptydim n) {
         if (n instanceof AEmptydim) process((AEmptydim)n);
 	else 
             throw new RuntimeException (this.getClass() + 
                 ": unexpected subclass " + n.getClass() + " in process(PEmptydim)");
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
-    // ignore this one
+
     ///////////////////////////////////////////////////////////////
     void process(AEmptydim n) {
         n.getLbrack();				// yields TLbrack
         n.getRbrack();				// yields TRbrack
-
-        throw new UnsupportedOperationException ();     // remove when method is complete
     }
 
 }

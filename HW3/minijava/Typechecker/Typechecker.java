@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public class Typechecker {
 
     Start root;
-
+    int methodCounter = -1;
     Map<String, Var> globalST = new HashMap<>();
     LocalST localST = new LocalST();
 
@@ -90,6 +90,14 @@ public class Typechecker {
         for (Method method : methodList) {
             System.out.println(method);
         }
+    }
+
+    public Method getCurrentMethod() {
+        return methodList.get(methodCounter);
+    }
+
+    public void nextMethod() {
+        methodCounter++;
     }
 
     public void createClassVar(String name, Type type) {
