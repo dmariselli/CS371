@@ -2,6 +2,7 @@ package minijava.Typechecker;
 
 import minijava.node.*;
 import minijava.Type.*;
+import minijava.Machine.*;
 
 import java.lang.Object;
 import java.util.*;
@@ -10,6 +11,8 @@ import java.util.ArrayList;
 public class Typechecker {
 
     Start root;
+    String fileBaseName;
+    Machine machine;
     int methodCounter = -1;
     Map<String, Var> globalST = new HashMap<>();
     LocalST localST = new LocalST();
@@ -55,8 +58,10 @@ public class Typechecker {
     HashMap<String,Type> typeMap;
     List<Method>         methodList;
 
-    public Typechecker (Start s) {
+    public Typechecker (Start s, String fileBaseName, Machine machine) {
         root = s;
+        this.fileBaseName = fileBaseName;
+        this.machine = machine;
 
         typeMap = new HashMap<String,Type>();
         typeMap.put ("int", Type.intType);
@@ -92,6 +97,10 @@ public class Typechecker {
         }
     }
 
+    public Machine getMachine() {
+        return machine;
+    }
+
     public Method getCurrentMethod() {
         return methodList.get(methodCounter);
     }
@@ -100,12 +109,14 @@ public class Typechecker {
         methodCounter++;
     }
 
-    public void createClassVar(String name, Type type) {
-        createClassVar(name, type, null);
+    public Var createClassVar(String name, Type type) {
+        return createClassVar(name, type, null);
     }
 
-    public void createClassVar(String name, Type type, Token tok) {
-        globalST.put(name, new Var(name, type, tok));
+    public Var createClassVar(String name, Type type, Token tok) {
+        Var var = new Var(name, type, tok);
+        globalST.put(name, var);
+        return var;
     }
 
     public void createMethod(String name, Type returnType,

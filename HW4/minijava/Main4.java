@@ -42,7 +42,7 @@ public class Main4 {
 	    Start startNode = p.parse();
 
 	    Typechecker typechecker 
-		= new Typechecker(startNode /*, fileBaseName, machine*/);
+		= new Typechecker(startNode, fileBaseName, machine);
 
 	    typechecker.phase1();
 	    typechecker.phase2();

@@ -2,6 +2,7 @@ package minijava.Typechecker;
 
 import minijava.node.*;
 import minijava.Type.*;
+import minijava.Temp.*;
 import java.lang.Override;
 
 public class Var {
@@ -9,6 +10,7 @@ public class Var {
     String name;
     Type type;
     Token tok;
+    Label label;
 
     public Var(String name, Type type, Token tok) {
         this.name = name;
@@ -22,6 +24,10 @@ public class Var {
 
     public Type getType() {
         return type;
+    }
+
+    public void setLabel(Label label) {
+        this.label = label;
     }
 
     @Override

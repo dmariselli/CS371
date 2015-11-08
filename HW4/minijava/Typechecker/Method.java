@@ -2,6 +2,7 @@ package minijava.Typechecker;
 
 import minijava.Type.*;
 import minijava.node.*;
+import minijava.Temp.*;
 
 import java.lang.Override;
 import java.util.List;
@@ -12,12 +13,17 @@ public class Method {
     Type returnType;
     List<Type> paramTypes;
     Token tok;
+    Label label;
 
     public Method(String name, Type returnType, List<Type> paramTypes, Token tok) {
         this.name = name;
         this.returnType = returnType;
         this.paramTypes = paramTypes;
         this.tok = tok;
+    }
+
+    public void setLabel(Label label) {
+        this.label = label;
     }
 
     public String getName() {

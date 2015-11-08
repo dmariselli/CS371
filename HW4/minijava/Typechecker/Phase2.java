@@ -2,10 +2,13 @@
 
 package minijava.Typechecker;
 
-import java.util.List;
-import java.util.ArrayList;
+import minijava.Translate.*;
 import minijava.node.*;
 import minijava.Type.*;
+import minijava.Temp.*;
+
+import java.util.List;
+import java.util.ArrayList;
 
 public class Phase2
 {
@@ -54,12 +57,17 @@ public class Phase2
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
         n.getSemi();				// yields TSemi
-        typechecker.createClassVar(n.getId().getText(), process(n.getType()));
+        Var var = typechecker.createClassVar(n.getId().getText(), process(n.getType()));
+        Label label = typechecker.getMachine().makeLabel(n.getId().getText());
+        var.setLabel(label);
     }
 
     ///////////////////////////////////////////////////////////////
     void process(AMethodMaindecl n) {
         typechecker.nextMethod();
+        Method method = typechecker.getCurrentMethod();
+        Label label = typechecker.getMachine().makeLabel(n.getId().getText());
+        method.setLabel(label);
         process(n.getPrivacy());			// process(PPrivacy)
         n.getStatic();				// yields TStatic
         process(n.getType());			// process(PType)
