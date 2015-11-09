@@ -3,6 +3,8 @@ package minijava.Typechecker;
 import minijava.Type.*;
 import minijava.node.*;
 import minijava.Temp.*;
+import minijava.Machine.*;
+import minijava.Frame.*;
 
 import java.lang.Override;
 import java.util.List;
@@ -14,6 +16,9 @@ public class Method {
     List<Type> paramTypes;
     Token tok;
     Label label;
+    Frame frame;
+    List<Access> parameterAccess;
+    Label exitLabel;
 
     public Method(String name, Type returnType, List<Type> paramTypes, Token tok) {
         this.name = name;
@@ -43,6 +48,16 @@ public class Method {
 
     public boolean equals(Method m){
         return (m.name.equals(this.name) && listCompare(m.paramTypes));
+    }
+
+    public void makeFrame(Machine machine) {
+        // TODO: Is this what we're supposed to do with the Access objects?
+        this.frame = machine.makeFrame(label);
+        this.parameterAccess = frame.createParameterAccesses(paramTypes.size());
+    }
+
+    public Frame getFrame() {
+        return this.frame;
     }
 
     public boolean listCompare(List<Type> other) {

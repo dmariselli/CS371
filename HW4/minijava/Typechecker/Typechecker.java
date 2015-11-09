@@ -3,6 +3,7 @@ package minijava.Typechecker;
 import minijava.node.*;
 import minijava.Type.*;
 import minijava.Machine.*;
+import minijava.Temp.*;
 
 import java.lang.Object;
 import java.util.*;
@@ -16,6 +17,7 @@ public class Typechecker {
     int methodCounter = -1;
     Map<String, Var> globalST = new HashMap<>();
     LocalST localST = new LocalST();
+    Map<String, Label> sconstMap = new HashMap<>();
 
     public class LocalST {
         List<Var> symbolVar = new ArrayList<Var>();
