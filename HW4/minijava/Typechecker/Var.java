@@ -3,6 +3,7 @@ package minijava.Typechecker;
 import minijava.node.*;
 import minijava.Type.*;
 import minijava.Temp.*;
+import minijava.Frame.*;
 import java.lang.Override;
 
 public class Var {
@@ -11,6 +12,7 @@ public class Var {
     Type type;
     Token tok;
     Label label;
+    Access access;
 
     public Var(String name, Type type, Token tok) {
         this.name = name;
@@ -28,6 +30,9 @@ public class Var {
 
     public void setLabel(Label label) {
         this.label = label;
+    }
+    public void setAccess(Access access) {
+        this.access = access;
     }
 
     @Override

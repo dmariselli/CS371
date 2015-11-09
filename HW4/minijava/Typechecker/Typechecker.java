@@ -4,6 +4,7 @@ import minijava.node.*;
 import minijava.Type.*;
 import minijava.Machine.*;
 import minijava.Temp.*;
+import minijava.Translate.*;
 
 import java.lang.Object;
 import java.util.*;
@@ -18,6 +19,7 @@ public class Typechecker {
     Map<String, Var> globalST = new HashMap<>();
     LocalST localST = new LocalST();
     Map<String, Label> sconstMap = new HashMap<>();
+    Builtins builtins;
 
     public class LocalST {
         List<Var> symbolVar = new ArrayList<Var>();
@@ -65,6 +67,7 @@ public class Typechecker {
         this.fileBaseName = fileBaseName;
         this.machine = machine;
 
+        this.builtins = new Builtins(machine);
         typeMap = new HashMap<String,Type>();
         typeMap.put ("int", Type.intType);
         typeMap.put ("String", Type.stringType);
