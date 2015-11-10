@@ -24,7 +24,7 @@ public class Phase2
     }
 
     void process(Node n) {
-    	 throw new RuntimeException(this.getClass() + ": no process method available for " 
+    	 throw new RuntimeException(this.getClass() + ": no process method available for "
 	     + n.getClass());
     }
 
@@ -83,8 +83,12 @@ public class Phase2
         method.makeFrame(typechecker.getMachine());
         n.getRparen();				// yields TRparen
         n.getLbrace();				// yields TLbrace
+        Label l1 = new Label();
+        method.setExitLabel(l1);
         for (PStmt p : n.getStmt())
             process(p);				// process(PStmt)
+        //TODO
+        LABEL exitLabel = new LABEL(l1);
         n.getRbrace();				// yields TRbrace
         typechecker.localST.decreaseScope();
     }
@@ -94,7 +98,7 @@ public class Phase2
         if (n instanceof AListParamlist) process((AListParamlist)n);
         else if (n instanceof AEmptyParamlist) process((AEmptyParamlist)n);
         else
-            throw new RuntimeException (this.getClass() + 
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PParamlist)");
     }
 
@@ -115,7 +119,7 @@ public class Phase2
     void process(PParam n) {
         if (n instanceof AParam) process((AParam)n);
 	    else
-            throw new RuntimeException (this.getClass() + 
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PParam)");
     }
 
@@ -131,8 +135,8 @@ public class Phase2
     void process(PPrivacy n) {
         if (n instanceof APublicPrivacy) process((APublicPrivacy)n);
 	else if (n instanceof ABlankPrivacy) process((ABlankPrivacy)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PPrivacy)");
     }
 
@@ -148,8 +152,8 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     Type process(PType n) {
         if (n instanceof AType) return process((AType)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PType)");
     }
 
@@ -172,8 +176,8 @@ public class Phase2
 	else if (n instanceof AReturnStmt) process((AReturnStmt)n);
 	else if (n instanceof APrintStmt) process((APrintStmt)n);
 	else if (n instanceof AEmptyStmt) process((AEmptyStmt)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PStmt)");
     }
 
@@ -183,7 +187,7 @@ public class Phase2
         n.getLparen();				// yields TLparen
         if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
             throw new TypecheckerException(n.getLparen(), "Incompatible type");
-        n.getRparen();				// yields TRparen
+        n.getRparen();		S		// yields TRparen
         typechecker.localST.increaseScope();
         process(n.getStmt());			// process(PStmt)
         typechecker.localST.decreaseScope();
@@ -268,8 +272,8 @@ public class Phase2
     ExprType process(PExpr n) {
         if (n instanceof AAssignExpr) return process((AAssignExpr)n);
 	else if (n instanceof AExprExpr) return process((AExprExpr)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PExpr)");
     }
 
@@ -292,8 +296,8 @@ public class Phase2
     ExprType process(PExpr10 n) {
         if (n instanceof AOrExpr10) return process((AOrExpr10)n);
 	else if (n instanceof AExprExpr10) return process((AExprExpr10)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PExpr10)");
     }
 
@@ -317,8 +321,8 @@ public class Phase2
     ExprType process(PExpr20 n) {
         if (n instanceof AAndExpr20) return process((AAndExpr20)n);
 	else if (n instanceof AExprExpr20) return process((AExprExpr20)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PExpr20)");
 
     }
@@ -344,8 +348,8 @@ public class Phase2
         if (n instanceof AEqExpr30) return process((AEqExpr30)n);
 	else if (n instanceof ANeExpr30) return process((ANeExpr30)n);
 	else if (n instanceof AExprExpr30) return process((AExprExpr30)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PExpr30)");
     }
 
@@ -383,8 +387,8 @@ public class Phase2
 	else if (n instanceof AGeExpr40) return process((AGeExpr40)n);
 	else if (n instanceof AGtExpr40) return process((AGtExpr40)n);
 	else if (n instanceof AExprExpr40) return process((AExprExpr40)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PExpr40)");
     }
 
@@ -442,8 +446,8 @@ public class Phase2
         if (n instanceof APlusExpr50) return process((APlusExpr50)n);
 	else if (n instanceof AMinusExpr50) return process((AMinusExpr50)n);
 	else if (n instanceof ATermExpr50) return process((ATermExpr50)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PExpr50)");
     }
 
@@ -498,8 +502,8 @@ public class Phase2
 	else if (n instanceof ADivTerm) return process((ADivTerm)n);
 	else if (n instanceof AModTerm) return process((AModTerm)n);
 	else if (n instanceof AFactorTerm) return process((AFactorTerm)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PTerm)");
     }
 
@@ -550,8 +554,8 @@ public class Phase2
 	else if (n instanceof AIdFactor) return process((AIdFactor)n);
 	else if (n instanceof ALengthFactor) return process((ALengthFactor)n);
 	else if (n instanceof ALength2Factor) return process((ALength2Factor)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PFactor)");
     }
 
@@ -601,8 +605,8 @@ public class Phase2
     ExprType process(PPrimary n) {
         if (n instanceof ANewarrayPrimary) return process((ANewarrayPrimary)n);
 	else if (n instanceof APrimary2Primary) return process((APrimary2Primary)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PPrimary)");
     }
 
@@ -643,8 +647,8 @@ public class Phase2
 	else if (n instanceof AParensPrimary2) return process((AParensPrimary2)n);
 	else if (n instanceof ACallPrimary2) return process((ACallPrimary2)n);
 	else if (n instanceof AArrayrefPrimary2) return process((AArrayrefPrimary2)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PPrimary2)");
     }
 
@@ -715,8 +719,8 @@ public class Phase2
     ExprType process(PArrayref n) {
         if (n instanceof ANameArrayref) return process((ANameArrayref)n);
 	else if (n instanceof APrimaryArrayref) return process((APrimaryArrayref)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PArrayref)");
     }
 
@@ -760,8 +764,8 @@ public class Phase2
     ExprType process(PLhs n) {
         if (n instanceof AIdLhs) return process((AIdLhs)n);
 	else if (n instanceof AArrayrefLhs) return process((AArrayrefLhs)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PLhs)");
     }
 
@@ -787,7 +791,7 @@ public class Phase2
     List<ExprType> process(PArglist n) {
         if (n instanceof AListArglist) return process((AListArglist)n);
 	    else
-            throw new RuntimeException (this.getClass() + 
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PArglist)");
     }
 
@@ -817,8 +821,8 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     void process(PEmptydim n) {
         if (n instanceof AEmptydim) process((AEmptydim)n);
-	else 
-            throw new RuntimeException (this.getClass() + 
+	else
+            throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PEmptydim)");
     }
 

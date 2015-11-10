@@ -15,10 +15,12 @@ public class Method {
     Type returnType;
     List<Type> paramTypes;
     Token tok;
-    Label label;
+    Label methodLabel;
     Frame frame;
     List<Access> parameterAccess;
+    Var hidden;
     Label exitLabel;
+    Stm tree;
 
     public Method(String name, Type returnType, List<Type> paramTypes, Token tok) {
         this.name = name;
@@ -27,8 +29,12 @@ public class Method {
         this.tok = tok;
     }
 
-    public void setLabel(Label label) {
-        this.label = label;
+    public void setMethodLabel(Label label) {
+        this.methodLabel = label;
+    }
+
+    public void setExitLabel(Label label) {
+        this.exitLabel = label;
     }
 
     public String getName() {
