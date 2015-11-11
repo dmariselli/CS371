@@ -28,6 +28,8 @@ public class Var {
         return type;
     }
 
+    public Access getAccess(){return access;}
+
     public void setLabel(Label label) {
         this.label = label;
     }

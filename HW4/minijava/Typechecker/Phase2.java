@@ -3,6 +3,13 @@
 /*  TODO: Things we do not understand:
     #7 - A variable that holds the return value.  When the code hits a return insert the value of the return into the
     variable and jump to the end of the method which then fetches the value inside of the variable and returns it
+    Change stmt processes to return stmts.
+    Change exprType processes so they return Expr
+    Figure which Expr to return
+    Initialize Access in HiddenVariable
+    Initialize Accesses in general
+    Bit of memory (get it?) that we don't understand
+    Implement Stm building in Method.
 */
 package minijava.Typechecker;
 
@@ -11,6 +18,7 @@ import minijava.node.*;
 import minijava.Type.*;
 import minijava.Frame.*;
 import minijava.Temp.*;
+import minijava.Tree.*;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -72,7 +80,7 @@ public class Phase2
         typechecker.nextMethod();
         Method method = typechecker.getCurrentMethod();
         Label label = typechecker.getMachine().makeLabel(n.getId().getText());
-        method.setLabel(label);
+        method.setMethodLabel(label);
         process(n.getPrivacy());			// process(PPrivacy)
         n.getStatic();				// yields TStatic
         process(n.getType());			// process(PType)
@@ -87,7 +95,11 @@ public class Phase2
         method.setExitLabel(l1);
         for (PStmt p : n.getStmt())
             process(p);				// process(PStmt)
-        //TODO
+        //TODO Add these tree fragments to method
+//        MOVE move = new MOVE(method.getFrame().RV(), method.getHiddenVar().getAccess().exp(method.getFrame().FP()));
+//        new MEM(method.getHiddenVar().getAccess().exp(method.getFrame().FP()));
+//        TODO: Determine what is being returned in the TEMP with reg to it. See if you need to add the FP or SP to get the right thing.
+//        And put it in the MOVE. Also we need to figure out how to initialize the Access in Hidden Variable.
         LABEL exitLabel = new LABEL(l1);
         n.getRbrace();				// yields TRbrace
         typechecker.localST.decreaseScope();
@@ -187,7 +199,7 @@ public class Phase2
         n.getLparen();				// yields TLparen
         if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
             throw new TypecheckerException(n.getLparen(), "Incompatible type");
-        n.getRparen();		S		// yields TRparen
+        n.getRparen();				// yields TRparen
         typechecker.localST.increaseScope();
         process(n.getStmt());			// process(PStmt)
         typechecker.localST.decreaseScope();
@@ -237,19 +249,30 @@ public class Phase2
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(AReturnStmt n) {
+    Stm process(AReturnStmt n) {
         n.getReturn();				// yields TReturn
+        n.getSemi();				// yields TSemi
         Type type = Type.voidType;
-        if (n.getExpr() != null)
-            type = process(n.getExpr()).getType();		// process(PExpr)
-        Type returnType = typechecker.getCurrentMethod().getReturnType();
-        if (returnType.equals(Type.voidType) && type.equals(returnType)){
-            return;
+        ExprType exprType;
+        if (n.getExpr() != null) {
+            exprType = process(n.getExpr());		// process(PExpr)
+            type = exprType.getType();
         }
+        Type returnType = typechecker.getCurrentMethod().getReturnType();
         if (!type.canAssignTo(returnType)) {
             throw new TypecheckerException(n.getReturn(), "Return type is not valid");
         }
-        n.getSemi();				// yields TSemi
+        Method method = typechecker.getCurrentMethod();
+        if (returnType.equals(Type.voidType) && type.equals(returnType)){
+            return new JUMP(method.getExitLabel());
+        } else {
+//            MOVE move = new MOVE(method.getHidden().getFrame().allocLocal().exp(new TEMP(method.getFrame().FP())), exprType.unEx());
+//            JUMP jump = new JUMP(method.getExitLabel());
+//            SEQ seq = new SEQ(move, jump);
+//            return seq;
+            return null;
+            //@TODO Uncomment this when unEx() is implemented;
+        }
     }
 
     ///////////////////////////////////////////////////////////////

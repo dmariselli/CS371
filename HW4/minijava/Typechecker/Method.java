@@ -20,7 +20,7 @@ public class Method {
     List<Access> parameterAccess;
     Var hidden;
     Label exitLabel;
-    Stm tree;
+//    Stm tree;
 
     public Method(String name, Type returnType, List<Type> paramTypes, Token tok) {
         this.name = name;
@@ -28,6 +28,8 @@ public class Method {
         this.paramTypes = paramTypes;
         this.tok = tok;
     }
+    //@TODO initialize hidden...how do we make an access for it?
+    public Var getHidden(){return hidden;}
 
     public void setMethodLabel(Label label) {
         this.methodLabel = label;
@@ -35,6 +37,10 @@ public class Method {
 
     public void setExitLabel(Label label) {
         this.exitLabel = label;
+    }
+
+    public Label getExitLabel() {
+        return this.exitLabel;
     }
 
     public String getName() {
@@ -58,7 +64,7 @@ public class Method {
 
     public void makeFrame(Machine machine) {
         // TODO: Is this what we're supposed to do with the Access objects?
-        this.frame = machine.makeFrame(label);
+        this.frame = machine.makeFrame(methodLabel);
         this.parameterAccess = frame.createParameterAccesses(paramTypes.size());
     }
 
