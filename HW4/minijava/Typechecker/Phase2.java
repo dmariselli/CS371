@@ -4,7 +4,7 @@
     #7 - A variable that holds the return value.  When the code hits a return insert the value of the return into the
     variable and jump to the end of the method which then fetches the value inside of the variable and returns it
     Change stmt processes to return stmts.
-    Change exprType processes so they return Expr
+    Change exprType processes so they return Expr instead of null
     Figure which Expr to return
     Initialize Access in HiddenVariable
     Initialize Accesses in general
@@ -179,22 +179,22 @@ public class Phase2
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(PStmt n) {
-        if (n instanceof AWhileStmt) process((AWhileStmt)n);
-	else if (n instanceof ADeclStmt) process((ADeclStmt)n);
-	else if (n instanceof ABlockStmt) process((ABlockStmt)n);
-	else if (n instanceof AIfStmt) process((AIfStmt)n);
-	else if (n instanceof AExprStmt) process((AExprStmt)n);
-	else if (n instanceof AReturnStmt) process((AReturnStmt)n);
-	else if (n instanceof APrintStmt) process((APrintStmt)n);
-	else if (n instanceof AEmptyStmt) process((AEmptyStmt)n);
+    Stm process(PStmt n) {
+        if (n instanceof AWhileStmt) return process((AWhileStmt)n);
+	else if (n instanceof ADeclStmt) return process((ADeclStmt)n);
+	else if (n instanceof ABlockStmt) return process((ABlockStmt)n);
+	else if (n instanceof AIfStmt) return process((AIfStmt)n);
+	else if (n instanceof AExprStmt) return process((AExprStmt)n);
+	else if (n instanceof AReturnStmt) return process((AReturnStmt)n);
+	else if (n instanceof APrintStmt) return process((APrintStmt)n);
+	else if (n instanceof AEmptyStmt) return process((AEmptyStmt)n);
 	else
             throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PStmt)");
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(AWhileStmt n) {
+    Stm process(AWhileStmt n) {
         n.getWhile();				// yields TWhile
         n.getLparen();				// yields TLparen
         if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
@@ -203,10 +203,13 @@ public class Phase2
         typechecker.localST.increaseScope();
         process(n.getStmt());			// process(PStmt)
         typechecker.localST.decreaseScope();
+        //@TODO THIS CJUMP
+        return typechecker.noop();
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(ADeclStmt n) {
+    Stm process(ADeclStmt n) {
+        //TODO: CHECK THIS.
         Type type = process(n.getType());			// process(PType)
         n.getId();				// yields TId
         n.getSemi();				// yields TSemi
@@ -216,18 +219,23 @@ public class Phase2
         }
         Access access = typechecker.getCurrentMethod().getFrame().allocLocal();
         typechecker.localST.lookup(n.getId().getText()).setAccess(access);
+        return new ESTM(new TEMP(new Temp()));
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(ABlockStmt n) {
+    Stm process(ABlockStmt n) {
+        // TODO: This tree is weird. Can we make it better (Balance it?)?
         n.getLbrace();				// yields TLbrace
         for (PStmt p : n.getStmt())
             process(p);				// process(PStmt)
         n.getRbrace();				// yields TRbrace
+        //@TODO this CJUMP
+        return typechecker.noop();
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(AIfStmt n) {
+    Stm process(AIfStmt n) {
+        // like it!
         n.getIf();				// yields TIf
         n.getLparen();				// yields TLparen
         if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
@@ -240,12 +248,14 @@ public class Phase2
         typechecker.localST.increaseScope();
         process(n.getElseclause());			// process(PStmt)
         typechecker.localST.decreaseScope();
+        //@TODO this CJUMP
+        return typechecker.noop();
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(AExprStmt n) {
-        process(n.getExpr());			// process(PExpr)
+    Stm process(AExprStmt n) {
         n.getSemi();				// yields TSemi
+        return new ESTM(process(n.getExpr()).getExpr().unEx());			// process(PExpr)
     }
 
     ///////////////////////////////////////////////////////////////
@@ -276,7 +286,7 @@ public class Phase2
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(APrintStmt n) {
+    Stm process(APrintStmt n) {
         n.getPrint();				// yields TPrint
         n.getLparen();				// yields TLparen
         if (process(n.getExpr()).getType().equals(Type.voidType)) {
@@ -284,11 +294,13 @@ public class Phase2
         }
         n.getRparen();				// yields TRparen
         n.getSemi();				// yields TSemi
+        return typechecker.noop();
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(AEmptyStmt n) {
+    Stm process(AEmptyStmt n) {
         n.getSemi();				// yields TSemi
+        return typechecker.noop();
     }
 
     ///////////////////////////////////////////////////////////////

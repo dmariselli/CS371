@@ -4,6 +4,7 @@ import minijava.node.*;
 import minijava.Type.*;
 import minijava.Machine.*;
 import minijava.Temp.*;
+import minijava.Tree.*;
 import minijava.Translate.*;
 
 import java.lang.Object;
@@ -204,6 +205,10 @@ public class Typechecker {
             }
         }
         return true;
+    }
+
+    public Stm noop() {
+        return new ESTM(new CONST(0));
     }
 
 }
