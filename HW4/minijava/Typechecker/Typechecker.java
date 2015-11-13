@@ -150,6 +150,15 @@ public class Typechecker {
         return foundMethods;
     }
 
+    public Label addSConst(String string) {
+        if (sconstMap.containsKey(string)) {
+            return sconstMap.get(string);
+        }
+        Label label = machine.makeLabel(string);
+        sconstMap.put(string, label);
+        return label;
+    }
+
     public Type getType(TId idToken) {
 	    return typeMap.get(idToken.getText());
     }
@@ -209,6 +218,28 @@ public class Typechecker {
 
     public Stm noop() {
         return new ESTM(new CONST(0));
+    }
+
+    public Method findMainMethod() {
+        for (Method m : methodList) {
+            if (m.name.equals("main") &&
+                    m.paramTypes.size() == 1 &&
+                    m.paramTypes.get(0).equals(new ArrayType(Type.stringType)))
+                return m;
+        }
+        throw new RuntimeException ("no main method!");
+    }
+
+    public String createICode() {
+        StringBuffer sb = new StringBuffer();
+        for (String s: sconstMap.keySet())
+            sb.append ("string " + sconstMap.get(s) + " " + s + "\n");
+        for (Var v : globalST.values())
+            sb.append ("globalVar " + v.label + "\n");
+        sb.append ("mainMethod " + findMainMethod().getMethodLabel() + "\n\n");
+        for (Method m : methodList)
+            sb.append (m.createICode() + "\n");
+        return sb.toString();
     }
 
 }

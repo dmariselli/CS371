@@ -5,6 +5,8 @@ import minijava.node.*;
 import minijava.Temp.*;
 import minijava.Machine.*;
 import minijava.Frame.*;
+import minijava.Translate.*;
+import minijava.Tree.*;
 
 import java.lang.Override;
 import java.util.List;
@@ -20,7 +22,7 @@ public class Method {
     List<Access> parameterAccess;
     Var hidden;
     Label exitLabel;
-//    Stm tree;
+    Stm body;
 
     public Method(String name, Type returnType, List<Type> paramTypes, Token tok) {
         this.name = name;
@@ -33,6 +35,10 @@ public class Method {
 
     public void setMethodLabel(Label label) {
         this.methodLabel = label;
+    }
+
+    public Label getMethodLabel() {
+        return this.methodLabel;
     }
 
     public void setExitLabel(Label label) {
@@ -82,6 +88,15 @@ public class Method {
             }
         }
         return true;
+    }
+
+    public String createICode() {
+        Stm b = frame.procEntryExit1(body);
+        return "method " + methodLabel + " "
+                + b.idString() + " "
+                + frame.getFrameInfo() + "\n"
+                + new ICode(b, frame)
+                + "endMethod\n\n";
     }
 
 }

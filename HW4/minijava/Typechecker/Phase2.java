@@ -10,6 +10,7 @@
     Initialize Accesses in general
     Bit of memory (get it?) that we don't understand
     Implement Stm building in Method.
+    Make sure all Label creations are done through Machine.makeLabel()
 */
 package minijava.Typechecker;
 
@@ -95,12 +96,12 @@ public class Phase2
         method.setExitLabel(l1);
         for (PStmt p : n.getStmt())
             process(p);				// process(PStmt)
+        LABEL exitLabel = new LABEL(l1);
         //TODO Add these tree fragments to method
 //        MOVE move = new MOVE(method.getFrame().RV(), method.getHiddenVar().getAccess().exp(method.getFrame().FP()));
 //        new MEM(method.getHiddenVar().getAccess().exp(method.getFrame().FP()));
 //        TODO: Determine what is being returned in the TEMP with reg to it. See if you need to add the FP or SP to get the right thing.
 //        And put it in the MOVE. Also we need to figure out how to initialize the Access in Hidden Variable.
-        LABEL exitLabel = new LABEL(l1);
         n.getRbrace();				// yields TRbrace
         typechecker.localST.decreaseScope();
     }
@@ -696,6 +697,8 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(ASconstPrimary2 n) {
         n.getSconst();				// yields TSconst
+        typechecker.addSConst(n.getSconst().toString());
+        // TODO: What to return here?
         return new ExprType(null, Type.stringType);
     }
 
