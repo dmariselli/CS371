@@ -107,6 +107,8 @@ public class Typechecker {
         return machine;
     }
 
+    public Builtins getBuiltins(){ return builtins;}
+
     public Method getCurrentMethod() {
         return methodList.get(methodCounter);
     }
@@ -218,6 +220,13 @@ public class Typechecker {
 
     public Stm noop() {
         return new ESTM(new CONST(0));
+    }
+
+    public Stm seq(Stm... list) {
+        Stm result = null;
+        for (Stm s : list)
+            result = (result == null) ? s : new SEQ(result, s);
+        return result;
     }
 
     public Method findMainMethod() {

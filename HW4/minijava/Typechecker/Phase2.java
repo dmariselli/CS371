@@ -10,7 +10,16 @@
     Initialize Accesses in general
     Bit of memory (get it?) that we don't understand
     Implement Stm building in Method.
-    Make sure all Label creations are done through Machine.makeLabel()
+    Make sure all Label creations are done through Machine.makeLabel()???
+    All caps should be stm
+    All expressions should be exp
+    How to:
+        To index in a one-dimensional array, construct a tree fragment that takes a pointer to the
+        first array element, as obtained with an Access, and then adds machine.wordSize() times the
+        index to get a pointer to the actual element. That pointer then can be dereferenced with
+        MEM to get the contained value. If there is another dimension to the array, the “contained
+        value” is a pointer to another array. It can be adjusted by the second index, and so on.
+
 */
 package minijava.Typechecker;
 
@@ -72,7 +81,7 @@ public class Phase2
         n.getId();				// yields TId
         n.getSemi();				// yields TSemi
         Var var = typechecker.createClassVar(n.getId().getText(), process(n.getType()));
-        Label label = typechecker.getMachine().makeLabel(n.getId().getText());
+        Label label = typechecker.getMachine().makeLabel("v_"  + n.getId().getText());
         var.setLabel(label);
     }
 
@@ -80,7 +89,7 @@ public class Phase2
     void process(AMethodMaindecl n) {
         typechecker.nextMethod();
         Method method = typechecker.getCurrentMethod();
-        Label label = typechecker.getMachine().makeLabel(n.getId().getText());
+        Label label = typechecker.getMachine().makeLabel("v_" + n.getId().getText());
         method.setMethodLabel(label);
         process(n.getPrivacy());			// process(PPrivacy)
         n.getStatic();				// yields TStatic
@@ -198,14 +207,22 @@ public class Phase2
     Stm process(AWhileStmt n) {
         n.getWhile();				// yields TWhile
         n.getLparen();				// yields TLparen
-        if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
+        ExprType exprType = process(n.getExpr());
+        if (!exprType.getType().equals(Type.booleanType))			// process(PExpr)
             throw new TypecheckerException(n.getLparen(), "Incompatible type");
         n.getRparen();				// yields TRparen
         typechecker.localST.increaseScope();
-        process(n.getStmt());			// process(PStmt)
+        Label l1 = new Label();
+        Label lt = new Label();
+        Label lf = new Label();
+        Stm s1 = new LABEL(l1);
+        Stm s2 = exprType.getExpr().unCx(lt, lf);
+        Stm s3 = new LABEL(lt);
+        Stm s4 = process(n.getStmt());			// process(PStmt)
+        Stm s5 = new JUMP(l1);
+        Stm s6 = new LABEL(lf);
         typechecker.localST.decreaseScope();
-        //@TODO THIS CJUMP
-        return typechecker.noop();
+        return typechecker.seq(s1, s2, s3, s4, s5, s6);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -236,21 +253,28 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     Stm process(AIfStmt n) {
-        // like it!
         n.getIf();				// yields TIf
         n.getLparen();				// yields TLparen
-        if (!process(n.getExpr()).getType().equals(Type.booleanType))			// process(PExpr)
+        ExprType exprType = process(n.getExpr());
+        if (!exprType.getType().equals(Type.booleanType))			// process(PExpr)
             throw new TypecheckerException(n.getLparen(), "Incompatible type");
         n.getRparen();				// yields TRparen
         typechecker.localST.increaseScope();
-        process(n.getThenclause());			// process(PStmt)
+        Label lt = new Label();
+        Label lf = new Label();
+        Label lout = new Label();
+        Stm s1 = exprType.getExpr().unCx(lt, lf);
+        Stm s2 = new LABEL(lt);
+        Stm s3 = process(n.getThenclause());			// process(PStmt)
+        Stm s4 = new JUMP(lout);
         typechecker.localST.decreaseScope();
         n.getElse();				// yields TElse
         typechecker.localST.increaseScope();
-        process(n.getElseclause());			// process(PStmt)
+        Stm s5 = new LABEL(lf);
+        Stm s6 = process(n.getElseclause());			// process(PStmt)
+        Stm s7 = new LABEL(lout);
         typechecker.localST.decreaseScope();
-        //@TODO this CJUMP
-        return typechecker.noop();
+        return typechecker.seq(s1, s2, s3, s4, s5, s6, s7);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -290,12 +314,14 @@ public class Phase2
     Stm process(APrintStmt n) {
         n.getPrint();				// yields TPrint
         n.getLparen();				// yields TLparen
-        if (process(n.getExpr()).getType().equals(Type.voidType)) {
+        ExprType exprType = process(n.getExpr());
+        if (exprType.getType().equals(Type.voidType)) {
             throw new TypecheckerException(n.getLparen(), "type not allowed here");
         }
         n.getRparen();				// yields TRparen
         n.getSemi();				// yields TSemi
-        return typechecker.noop();
+        Exp mem = new MEM(exprType.getExpr().unEx());
+        return new ESTM(new CALL(new NAME(typechecker.getBuiltins().printString), new ExpList(mem)));
     }
 
     ///////////////////////////////////////////////////////////////
@@ -489,29 +515,40 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     ExprType process(APlusExpr50 n) {
-        Type typeLHS = process(n.getLeft()).getType();			// process(PExpr50)
+        ExprType exprTypeLHS = process(n.getLeft());            	// process(PExpr50)
         n.getPlus();				// yields TPlus
-        Type typeRHS = process(n.getRight()).getType();			// process(PTerm)
-        Type type = typeLHS;
-        if (typeLHS.equals(Type.stringType)){
-            if (typeRHS.equals(Type.voidType)){
+        ExprType exprTypeRHS = process(n.getRight());			// process(PTerm)
+        Type type = exprTypeLHS.getType();
+        if (exprTypeLHS.getType().equals(Type.stringType)){
+            if (exprTypeRHS.getType().equals(Type.voidType)){
                 throw new TypecheckerException(n.getPlus(), "Incompatible types");
             }
         }
-        else if (typeRHS.equals(Type.stringType)){
-            if (typeLHS.equals(Type.voidType)){
+        else if (exprTypeRHS.getType().equals(Type.stringType)){
+            if (exprTypeLHS.getType().equals(Type.voidType)){
                 throw new TypecheckerException(n.getPlus(), "Incompatible types");
             }
         }
-        else if (typeLHS.equals(Type.intType)){
-            if (!( typeRHS.equals(Type.intType))){
+        else if (exprTypeLHS.getType().equals(Type.intType)){
+            if (!(exprTypeRHS.getType().equals(Type.intType))){
                 throw new TypecheckerException(n.getPlus(), "Incompatible types");
             }
         }
-        if (!typeLHS.equals(typeRHS)){
+        Exp lhsExp = exprTypeLHS.getExpr().unEx();
+        Exp rhsExp = exprTypeRHS.getExpr().unEx();
+        if (!exprTypeLHS.getType().equals(exprTypeRHS.getType())) {
             type = Type.stringType;
+            if (exprTypeLHS.getType().equals(Type.intType)) {
+                lhsExp = new MEM(new CALL(new NAME(typechecker.getBuiltins().intToString),
+                        new ExpList(exprTypeLHS.getExpr().unEx())));
+            } else if (exprTypeRHS.getType().equals(Type.intType)) {
+                rhsExp = new MEM(new CALL(new NAME(typechecker.getBuiltins().intToString),
+                        new ExpList(exprTypeRHS.getExpr().unEx())));
+            }
         }
-        return new ExprType(null, type);
+        //@TODO etch a sketch check this
+        return new ExprType(new Ex(new CALL(new NAME(typechecker.getBuiltins().stringConcatenate),
+                new ExpList (lhsExp, rhsExp))), type);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -631,10 +668,14 @@ public class Phase2
         n.getLength();				// yields TLength
         n.getLparen();				// yields TLparen
         n.getRparen();				// yields TRparen
-        if (!((typechecker.localST.lookup(n.getId().getText())).getType().equals(Type.stringType))) {
+        Var var = typechecker.localST.lookup(n.getId().getText());
+        if (!((var.getType().equals(Type.stringType)))) {
             throw new TypecheckerException(n.getId(), "Is not a String");
         }
-        return new ExprType(null, Type.intType);
+        Exp length = new CALL(new NAME(typechecker.getBuiltins().stringLength),
+                //@TODO THIS IS DEFINITELY NOT RIGHT BUT IT MAKES
+                new ExpList (var.getAccess().exp(new TEMP(typechecker.getCurrentMethod().getFrame().FP()))));
+        return new ExprType(new Ex(length), Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -665,7 +706,8 @@ public class Phase2
         if (!typechecker.checkVarType(n.getId())) {
             throw new TypecheckerException(n.getId(), "Invalid type");
         }
-        return new ExprType(null, type);
+        return new ExprType(new Ex(new CALL(new NAME(typechecker.getBuiltins().createArray),
+                new ExpList (withinBrackets.getExpr().unEx()))), type);
     }
 
     ///////////////////////////////////////////////////////////////

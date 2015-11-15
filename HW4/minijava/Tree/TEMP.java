@@ -23,9 +23,9 @@ public class TEMP extends Exp {
     public String toString() { return "TEMP(" + temp.toString() + ")"; }
 
     public String icode(TempMap map) {
-	String s = map.tempMap(temp);
-	if (s == null) s = temp.toString();
- 	return idString + " : TEMP " + s;
+        String s = map.tempMap(temp);
+        if (s == null) s = temp.toString();
+        return idString + " : TEMP " + s;
     }
 }
 
