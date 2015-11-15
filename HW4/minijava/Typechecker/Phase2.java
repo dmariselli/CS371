@@ -19,6 +19,7 @@
         index to get a pointer to the actual element. That pointer then can be dereferenced with
         MEM to get the contained value. If there is another dimension to the array, the “contained
         value” is a pointer to another array. It can be adjusted by the second index, and so on.
+    Difference between primaryarrayref and anamearrayref
 
 */
 package minijava.Typechecker;
@@ -594,26 +595,27 @@ public class Phase2
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ADivTerm n) {
-        Type typeLHS = process(n.getLeft()).getType();			// process(PTerm)
+        ExprType ExprTypeLHS = process(n.getLeft());			// process(PTerm)
         n.getDiv();				// yields TDiv
-        Type typeRHS = process(n.getRight()).getType();			// process(PFactor)
-        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
+        ExprType ExprTypeRHS = process(n.getRight());			// process(PFactor)
+        if ((!ExprTypeLHS.getType().equals(Type.intType)) || (!ExprTypeRHS.getType().equals(Type.intType)))
         {
             throw new TypecheckerException(n.getDiv(), "Incompatible types");
         }
-        return new ExprType(null, Type.intType);
+        //@TODO check
+        return new ExprType(new Ex(new BINOP("DIV", ExprTypeLHS.getExpr().unEx(), ExprTypeRHS.getExpr().unEx())), Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AModTerm n) {
-        Type typeLHS = process(n.getLeft()).getType();			// process(PTerm)
+        ExprType ExprTypeLHS = process(n.getLeft());			// process(PTerm)
         n.getMod();				// yields TMod
-        Type typeRHS = process(n.getRight()).getType();			// process(PFactor)
-        if ((!typeLHS.equals(Type.intType)) || (!typeRHS.equals(Type.intType)))
+        ExprType ExprTypeRHS = process(n.getRight());			// process(PFactor)
+        if ((!ExprTypeLHS.getType().equals(Type.intType)) || (!ExprTypeRHS.getType().equals(Type.intType)))
         {
             throw new TypecheckerException(n.getMod(), "Incompatible types");
         }
-        return new ExprType(null, Type.intType);
+        return new ExprType(new Ex(new BINOP("MOD", ExprTypeLHS.getExpr().unEx(), ExprTypeRHS.getExpr().unEx())), Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -647,7 +649,9 @@ public class Phase2
                 throw new TypecheckerException(n.getId(), "Variable not declared");
             }
         }
-        return new ExprType(null, var.getType());
+        //@TODO MEM
+        return new ExprType(new Ex(new MEM(var.getAccess().exp(new
+                TEMP(typechecker.getCurrentMethod().getFrame().FP())))), var.getType());
     }
 
     ///////////////////////////////////////////////////////////////
@@ -658,6 +662,7 @@ public class Phase2
         if (!(typechecker.localST.lookup(n.getId().getText()).getType() instanceof ArrayType)) {
             throw new TypecheckerException(n.getId(), "Is not an array");
         }
+        //@TODO MEMORY LOOKUP INDEX -1
         return new ExprType(null, Type.intType);
     }
 
@@ -672,8 +677,8 @@ public class Phase2
         if (!((var.getType().equals(Type.stringType)))) {
             throw new TypecheckerException(n.getId(), "Is not a String");
         }
+        //@TODO THIS IS DEFINITELY NOT RIGHT BUT IT MAKES
         Exp length = new CALL(new NAME(typechecker.getBuiltins().stringLength),
-                //@TODO THIS IS DEFINITELY NOT RIGHT BUT IT MAKES
                 new ExpList (var.getAccess().exp(new TEMP(typechecker.getCurrentMethod().getFrame().FP()))));
         return new ExprType(new Ex(length), Type.intType);
     }
@@ -733,33 +738,36 @@ public class Phase2
     ///////////////////////////////////////////////////////////////
     ExprType process(AIconstPrimary2 n) {
         n.getIconst();				// yields TIconst
-        return new ExprType(null, Type.intType);
+        return new ExprType(new Ex(new CONST(Integer.parseInt(n.getIconst().getText()))), Type.intType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ASconstPrimary2 n) {
         n.getSconst();				// yields TSconst
         typechecker.addSConst(n.getSconst().toString());
-        // TODO: What to return here?
+        // TODO: What to return here?  some MEM
         return new ExprType(null, Type.stringType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ANullPrimary2 n) {
         n.getNull();				// yields TNull
+        //@TODO T_T
         return new ExprType(null, Type.nullType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(ATruePrimary2 n) {
         n.getTrue();				// yields TTrue
-        return new ExprType(null, Type.booleanType);
+        //@TODO check this
+        return new ExprType(new Ex(new CONST(1)), Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
     ExprType process(AFalsePrimary2 n) {
         n.getFalse();				// yields TFalse
-        return new ExprType(null, Type.booleanType);
+        //@TODO check this
+        return new ExprType(new Ex(new CONST(0)), Type.booleanType);
     }
 
     ///////////////////////////////////////////////////////////////
@@ -778,8 +786,10 @@ public class Phase2
             exprTypeList = process(n.getArglist());		// process(PArglist)
         n.getRparen();				// yields TRparen
         List<Type> typeList = new ArrayList<>();
+        ExpList args = new ExpList();
         for (ExprType exprType : exprTypeList){
             typeList.add(exprType.getType());
+            args.addLast(exprType.getExpr().unEx());
         }
         List<Method> methodList = typechecker.findMethods(n.getId().getText(), typeList);
         if (methodList.size() > 1) {
@@ -787,7 +797,11 @@ public class Phase2
         } else if (methodList.isEmpty()) {
             throw new TypecheckerException(n.getId(), "Method not declared");
         }
-        return new ExprType(null, methodList.get(0).getReturnType());
+        Exp methodName = new NAME(typechecker.getCurrentMethod().getMethodLabel());
+        Exp call = new CALL(methodName, args);
+
+        //@TODO check this Ex or CxRel?
+        return new ExprType(new Ex(call), methodList.get(0).getReturnType());
     }
 
     ///////////////////////////////////////////////////////////////
@@ -826,6 +840,7 @@ public class Phase2
         else {
             return new ExprType(null, var.getType());
         }
+        //@TODO same as below
     }
 
     ///////////////////////////////////////////////////////////////
@@ -837,6 +852,7 @@ public class Phase2
         if (inner.getType() != Type.intType) {
             throw new TypecheckerException(n.getLbrack(), "Incompatible type.");
         }
+        //@TODO what to return here...the process?
         return new ExprType(null, ((ArrayType) arrayType.getType()).getBaseType());
     }
 
@@ -859,7 +875,9 @@ public class Phase2
                 throw new TypecheckerException(n.getId(), "Cannot find symbol.");
             }
         }
-        return new ExprType(null, lhsVar.getType());
+        //@TODO--How questionable is this?
+        Exp mem = new MEM(lhsVar.getAccess().exp(new TEMP(typechecker.getCurrentMethod().getFrame().FP())));
+        return new ExprType(new Ex(mem), lhsVar.getType());
     }
 
     ///////////////////////////////////////////////////////////////
