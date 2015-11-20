@@ -24,7 +24,6 @@ public class Method {
     Label exitLabel;
     Stm body;
 
-
     public Method(String name, Type returnType, List<Type> paramTypes, Token tok) {
         this.name = name;
         this.returnType = returnType;

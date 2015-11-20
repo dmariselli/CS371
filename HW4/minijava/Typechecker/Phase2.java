@@ -115,16 +115,16 @@ public class Phase2
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(PParamlist n) {
-        if (n instanceof AListParamlist) process((AListParamlist)n);
-        else if (n instanceof AEmptyParamlist) process((AEmptyParamlist)n);
+    Stm process(PParamlist n) {
+        if (n instanceof AListParamlist) return process((AListParamlist)n);
+        else if (n instanceof AEmptyParamlist) return process((AEmptyParamlist)n);
         else
             throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PParamlist)");
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(AListParamlist n) {
+    Stm process(AListParamlist n) {
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
         typechecker.localST.declareLocal(n.getId().getText(), process(n.getType()));
@@ -132,10 +132,12 @@ public class Phase2
         typechecker.localST.lookup(n.getId().getText()).setAccess(access);
         for (PParam p : n.getParam())
             process(p);				// process(PParam)
+        return typechecker.noop();
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(AEmptyParamlist n) {
+    Stm process(AEmptyParamlist n) {
+        return typechecker.noop();
     }
 
     ///////////////////////////////////////////////////////////////
