@@ -47,14 +47,12 @@ public class Main4 {
 	    typechecker.phase1();
 	    typechecker.phase2();
 
-	    /*
 	    String outfile = fileBaseName + ".icode1";
 	    PrintWriter out = new PrintWriter(new FileWriter(outfile));
 
 	    out.println ("icode1 " + fileBaseName + " " + machine.getName());
 	    out.print   (typechecker.createICode());
 	    out.close();
-	    */
 	}
 	catch(LexerException e) {
 	    System.err.println(e);

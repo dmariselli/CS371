@@ -229,6 +229,13 @@ public class Typechecker {
         return result;
     }
 
+    public void initializeMethodLabels(){
+        for (Method method: methodList){
+            Label label = machine.makeLabel("v_" + method.getName());
+            method.setMethodLabel(label);
+        }
+    }
+
     public Method findMainMethod() {
         for (Method m : methodList) {
             if (m.name.equals("main") &&

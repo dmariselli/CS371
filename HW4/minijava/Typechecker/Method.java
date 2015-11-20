@@ -24,13 +24,26 @@ public class Method {
     Label exitLabel;
     Stm body;
 
+
     public Method(String name, Type returnType, List<Type> paramTypes, Token tok) {
         this.name = name;
         this.returnType = returnType;
         this.paramTypes = paramTypes;
         this.tok = tok;
+        this.hidden = new Var("hidden", returnType, null);
+    }
+
+    public void startTree(Stm s) {
+        body = s;
     }
     //@TODO initialize hidden...how do we make an access for it?
+    public void addToTree(Stm s){
+
+        body = new SEQ(body, s);
+    }
+
+    public Stm getTree(){ return body; }
+
     public Var getHidden(){return hidden;}
 
     public void setMethodLabel(Label label) {
