@@ -5,6 +5,9 @@
     modify MEM's for what is supposed to be address location
     check basetype...
     @TODO extrapolate the whole Access.exp.......(FP).......to helper method
+    make params. set access based on what wer get from getparamaccess
+    change eseq so it's two moves. one to temp, temp to place we want. eseq to the temp.
+ something is wrong at botom of ex1
 */
 
 // How to properly initialize and use Accesses.
@@ -87,15 +90,16 @@ public class Phase2
         n.getLparen();				// yields TLparen
         typechecker.localST.increaseScope();
         method.makeFrame(typechecker.getMachine());
-        process(n.getParamlist());			// process(PParamlist)
         n.getRparen();				// yields TRparen
         n.getLbrace();				// yields TLbrace
+        //@TODO real name
+        Stm somethingBeautiful = process(n.getParamlist());			// process(PParamlist)
         Label l1 = new Label();
         method.setExitLabel(l1);
         List<PStmt> stmts = n.getStmt();
         if (!stmts.isEmpty()) {
-            method.startTree(process(stmts.get(0)));
-            for (int i = 1; i < stmts.size(); i++) {
+            method.startTree(somethingBeautiful);
+            for (int i = 0; i < stmts.size(); i++) {
                 method.addToTree(process(stmts.get(i)));
             }
         } else {
@@ -130,9 +134,18 @@ public class Phase2
         typechecker.localST.declareLocal(n.getId().getText(), process(n.getType()));
         Access access = typechecker.getCurrentMethod().getFrame().allocLocal();
         typechecker.localST.lookup(n.getId().getText()).setAccess(access);
-        for (PParam p : n.getParam())
-            process(p);				// process(PParam)
-        return typechecker.noop();
+        List<PParam> params = n.getParam();
+        List<Access> accesses = typechecker.getCurrentMethod().getParameterAccess();
+        Stm fragment = typechecker.noop();
+        if ((params.size()!=0) && (accesses.size()!=0)) {
+            fragment = new MOVE(process(params.get(0)).getExpr().unEx(), accesses.get(0).exp(new TEMP(typechecker.getCurrentMethod().getFrame().FP())));
+        }
+        for (int i = 1; i < params.size(); i++) {
+            fragment = new SEQ(fragment, new MOVE(process(params.get(i)).getExpr().unEx(), accesses.get(i).exp(new TEMP(typechecker.getCurrentMethod().getFrame().FP()))));
+        }
+//        for (PParam p : n.getParam())
+//            process(p);				// process(PParam)
+        return fragment;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -141,19 +154,22 @@ public class Phase2
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(PParam n) {
-        if (n instanceof AParam) process((AParam)n);
+    ExprType process(PParam n) {
+        if (n instanceof AParam) return process((AParam)n);
 	    else
             throw new RuntimeException (this.getClass() +
                 ": unexpected subclass " + n.getClass() + " in process(PParam)");
     }
 
     ///////////////////////////////////////////////////////////////
-    void process(AParam n) {
+    ExprType process(AParam n) {
         n.getComma();				// yields TComma
-        process(n.getType());			// process(PType)
+        Type type = process(n.getType());			// process(PType)
         n.getId();				// yields TId
         typechecker.localST.declareLocal(n.getId().getText(), process(n.getType()));
+        Access access = typechecker.getCurrentMethod().getFrame().allocLocal();
+        typechecker.localST.lookup(n.getId().getText()).setAccess(access);
+        return new ExprType(new Ex(access.exp(new TEMP(typechecker.getCurrentMethod().getFrame().FP()))), type);
     }
 
     ///////////////////////////////////////////////////////////////

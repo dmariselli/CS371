@@ -156,7 +156,7 @@ public class Typechecker {
         if (sconstMap.containsKey(string)) {
             return sconstMap.get(string);
         }
-        Label label = machine.makeLabel(string);
+        Label label = new Label();
         sconstMap.put(string, label);
         return label;
     }

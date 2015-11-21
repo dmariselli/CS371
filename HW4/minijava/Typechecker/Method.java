@@ -65,6 +65,10 @@ public class Method {
         return this.name;
     }
 
+    public List<Access> getParameterAccess() {
+        return parameterAccess;
+    }
+
     public Type getReturnType(){ return this.returnType; }
 
     public List<Type> getParamTypes() {
