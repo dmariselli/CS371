@@ -7,7 +7,7 @@
     @TODO extrapolate the whole Access.exp.......(FP).......to helper method
     make params. set access based on what wer get from getparamaccess
     change eseq so it's two moves. one to temp, temp to place we want. eseq to the temp.
- something is wrong at botom of ex1
+    something is wrong at botom of ex1
 */
 
 // How to properly initialize and use Accesses.
@@ -92,14 +92,18 @@ public class Phase2
         method.makeFrame(typechecker.getMachine());
         n.getRparen();				// yields TRparen
         n.getLbrace();				// yields TLbrace
-        //@TODO real name
-        Stm somethingBeautiful = process(n.getParamlist());			// process(PParamlist)
+        List<Param> paramList = process(n.getParamlist());			// process(PParamlist)
         Label l1 = new Label();
         method.setExitLabel(l1);
         List<PStmt> stmts = n.getStmt();
+        List<Access> paramaterAccess = method.getParameterAccess();
+        for (int i = 0; i < paramList.size(); i++) {
+            typechecker.localST.declareLocal(paramList.get(i).id, paramList.get(i).type);
+            typechecker.localST.lookup(paramList.get(i).id).setAccess(paramaterAccess.get(i));
+        }
         if (!stmts.isEmpty()) {
-            method.startTree(somethingBeautiful);
-            for (int i = 0; i < stmts.size(); i++) {
+            method.startTree(process(stmts.get(0)));
+            for (int i = 1; i < stmts.size(); i++) {
                 method.addToTree(process(stmts.get(i)));
             }
         } else {
@@ -107,19 +111,12 @@ public class Phase2
         }
         Stm exitLabel = new LABEL(l1);
         method.addToTree(exitLabel);
-        if (!method.getReturnType().equals(Type.voidType)) {
-            MOVE move = new MOVE(new TEMP(method.getFrame().RV()), method.getHidden().getAccess().exp(new TEMP(method.getFrame().FP())));
-            method.addToTree(move);
-        }
-        //TODO Add these tree fragments to method
-//        TODO: Determine what is being returned in the TEMP with reg to it. See if you need to add the FP or SP to get the right thing.
-//        And put it in the MOVE. Also we need to figure out how to initialize the Access in Hidden Variable.
         n.getRbrace();				// yields TRbrace
         typechecker.localST.decreaseScope();
     }
 
     ///////////////////////////////////////////////////////////////
-    Stm process(PParamlist n) {
+    List<Param> process(PParamlist n) {
         if (n instanceof AListParamlist) return process((AListParamlist)n);
         else if (n instanceof AEmptyParamlist) return process((AEmptyParamlist)n);
         else
@@ -128,33 +125,25 @@ public class Phase2
     }
 
     ///////////////////////////////////////////////////////////////
-    Stm process(AListParamlist n) {
+    List<Param> process(AListParamlist n) {
         process(n.getType());			// process(PType)
         n.getId();				// yields TId
-        typechecker.localST.declareLocal(n.getId().getText(), process(n.getType()));
-        Access access = typechecker.getCurrentMethod().getFrame().allocLocal();
-        typechecker.localST.lookup(n.getId().getText()).setAccess(access);
-        List<PParam> params = n.getParam();
-        List<Access> accesses = typechecker.getCurrentMethod().getParameterAccess();
-        Stm fragment = typechecker.noop();
-        if ((params.size()!=0) && (accesses.size()!=0)) {
-            fragment = new MOVE(process(params.get(0)).getExpr().unEx(), accesses.get(0).exp(new TEMP(typechecker.getCurrentMethod().getFrame().FP())));
-        }
-        for (int i = 1; i < params.size(); i++) {
-            fragment = new SEQ(fragment, new MOVE(process(params.get(i)).getExpr().unEx(), accesses.get(i).exp(new TEMP(typechecker.getCurrentMethod().getFrame().FP()))));
-        }
-//        for (PParam p : n.getParam())
-//            process(p);				// process(PParam)
-        return fragment;
+        List<Param> paramList = new ArrayList<>();
+        paramList.add(new Param(n.getId().getText(), process(n.getType())));
+//        typechecker.localST.declareLocal(n.getId().getText(), process(n.getType()));
+        for (PParam p : n.getParam())
+            paramList.add(process(p));				// process(PParam)
+//        List<Access> accesses = typechecker.getCurrentMethod().getParameterAccess();
+        return paramList;
     }
 
     ///////////////////////////////////////////////////////////////
-    Stm process(AEmptyParamlist n) {
-        return typechecker.noop();
+    List<Param> process(AEmptyParamlist n) {
+        return null;
     }
 
     ///////////////////////////////////////////////////////////////
-    ExprType process(PParam n) {
+    Param process(PParam n) {
         if (n instanceof AParam) return process((AParam)n);
 	    else
             throw new RuntimeException (this.getClass() +
@@ -162,14 +151,22 @@ public class Phase2
     }
 
     ///////////////////////////////////////////////////////////////
-    ExprType process(AParam n) {
+    Param process(AParam n) {
         n.getComma();				// yields TComma
         Type type = process(n.getType());			// process(PType)
         n.getId();				// yields TId
-        typechecker.localST.declareLocal(n.getId().getText(), process(n.getType()));
-        Access access = typechecker.getCurrentMethod().getFrame().allocLocal();
-        typechecker.localST.lookup(n.getId().getText()).setAccess(access);
-        return new ExprType(new Ex(access.exp(new TEMP(typechecker.getCurrentMethod().getFrame().FP()))), type);
+        return new Param(n.getId().getText(), process(n.getType()));
+    }
+
+    class Param {
+
+        String id;
+        Type type;
+
+        public Param(String id, Type type) {
+            this.id = id;
+            this.type = type;
+        }
     }
 
     ///////////////////////////////////////////////////////////////
@@ -326,8 +323,10 @@ public class Phase2
             }
             method.getHidden().setAccess(typechecker.getCurrentMethod().getFrame().allocLocal());
             MOVE move = new MOVE(method.getHidden().getAccess().exp(new TEMP(method.getFrame().FP())), exprType.getExpr().unEx());
+            MOVE move2 = new MOVE(new TEMP(method.getFrame().RV()), method.getHidden().getAccess().exp(new TEMP(method.getFrame().FP())));
             JUMP jump = new JUMP(method.getExitLabel());
-            SEQ seq = new SEQ(move, jump);
+            SEQ seq = new SEQ(move, move2);
+            seq = new SEQ(seq, jump);
             return seq;
         }
     }
