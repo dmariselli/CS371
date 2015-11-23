@@ -32,6 +32,10 @@ public class Var {
         return access;
     }
 
+    public Label getLabel(){
+        return label;
+    }
+
     public void setLabel(Label label) {
         this.label = label;
     }

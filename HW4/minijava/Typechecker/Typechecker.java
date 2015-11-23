@@ -6,6 +6,7 @@ import minijava.Machine.*;
 import minijava.Temp.*;
 import minijava.Tree.*;
 import minijava.Translate.*;
+import minijava.Frame.*;
 
 import java.lang.Object;
 import java.util.*;
@@ -50,7 +51,7 @@ public class Typechecker {
             return declareLocal(name, new Var(name, type, tok));
         }
         boolean declareLocal(String s, Var v){
-            if (localSTMap.containsKey(s)) {
+            if (localSTMap.get(s) != null) {
                 return false;
             }
             localSTMap.put(s, v);
@@ -67,14 +68,12 @@ public class Typechecker {
         root = s;
         this.fileBaseName = fileBaseName;
         this.machine = machine;
-
         this.builtins = new Builtins(machine);
         typeMap = new HashMap<String,Type>();
         typeMap.put ("int", Type.intType);
         typeMap.put ("String", Type.stringType);
         typeMap.put ("void", Type.voidType);
         typeMap.put ("boolean", Type.booleanType);
-
         methodList = new LinkedList<Method>();
     }
 
