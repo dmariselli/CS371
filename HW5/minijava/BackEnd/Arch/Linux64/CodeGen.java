@@ -21,6 +21,8 @@ import minijava.Tree.BINOP;
 import minijava.Tree.CONST;
 import minijava.Tree.CALL;
 
+import java.lang.UnsupportedOperationException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -73,10 +75,16 @@ class CodeGen {
 	munchExp (s.exp);
     }
 
+    // Wrote
     private void munchStm (MOVE s) {
-
-	// fill this in
-
+        if (s.dst instanceof TEMP) {
+            emit ( new MOVEInstr(tab + "movq\t`s0, `d0\n", ((TEMP) s.dst).temp, munchExp(s.src)));
+        } else if (s.dst instanceof MEM) {
+            Temp underMEM = munchExp(((MEM) s.dst).exp);
+            emit(new OPERInstr(tab + "movq\t`s0, (`s1)\n", null, new TempList(munchExp(s.src), underMEM)));
+        } else {
+            throw new UnsupportedOperationException("MOVE");
+        }
     }
 
     private void munchStm (LABEL s) {
@@ -86,12 +94,18 @@ class CodeGen {
     }
       
     private void munchStm (JUMP s) {
-	emit (new OPERInstr (tab + "jmp " + s.target + "\n", null, null, s.target));
+	emit (new OPERInstr (tab + "jmp\t" + s.target + "\n", null, null, s.target));
     }
 
+    // Wrote
     private void munchStm (CJUMP s) {
-	
-	// fill this in
+	    emit (new OPERInstr (tab + "cmpq\t`s1, `s0\n" + tab + CJUMPHelper(s) + "\t" + s.iftrue + "\n", new TempList(), new TempList(munchExp(s.left), munchExp(s.right)), s.iftrue, s.iffalse));
+    }
+
+    // Wrote
+    private String CJUMPHelper(CJUMP s) {
+        String[] command = {"je", "jne", "jl", "jg", "jle", "jge"};
+        return command[s.relop];
     }
 
     private Temp munchExp (Exp e) {
@@ -107,8 +121,8 @@ class CodeGen {
     private Temp munchExp (CONST e) {
 	Temp t = new Temp();
 
-	emit (new OPERInstr (tab + "movq $" + e.value + ",`d0\n", new TempList(t), null));
-	return t;
+	emit (new OPERInstr (tab + "movq\t$" + e.value + ",`d0\n", new TempList(t), null));
+	    return t;
     }
 
     private Temp munchExp (TEMP e) {
@@ -116,33 +130,52 @@ class CodeGen {
     }
 
     private Temp munchExp (NAME e) {      // the expression is a pointer
-	Temp t = new Temp();
-	
-	emit (new OPERInstr (tab + "leaq " + e.label + "(%rip),`d0\n", 
-			new TempList(t), null));
-	return t;
+        Temp t = new Temp();
+        emit (new OPERInstr (tab + "leaq\t" + e.label + "(%rip),`d0\n",
+                new TempList(t), null));
+        return t;
     }
 
+    // Wrote
     private Temp munchExp (MEM e) {
-	Temp t = new Temp();
-	
-	// stuff needed here
-
-	return t;
+	    Temp t = new Temp();
+	    emit (new OPERInstr (tab + "movq\t(`s0), `d0\n", new TempList(t), new TempList(munchExp(e.exp))));
+	    return t;
     }
 
+    // Wrote
     private Temp munchExp (BINOP e) {
-	Temp t = new Temp();
-	
-	// stuff needed here
-
-	return t;
+    	Temp t = new Temp();
+        Temp left = munchExp(e.left);
+        emit (new OPERInstr (tab + "movq\t`s0, `d0\n", new TempList(t), new TempList(left)));
+        emit (new OPERInstr (tab + BINOPHelper(e) + "\t`s0, `d0\n", new TempList(t), new TempList(munchExp(e.right), t)));
+	    return t;
     }
 
+    // Wrote
+    private String BINOPHelper(BINOP e) {
+        //TODO: handle div and mod
+        //ask about shifts - no shifts
+        String[] command = {"addq", "subq", "imulq", "idivq", "andq", "orq", "shlq", "shrq", "sarq", "xorq", "modq"};
+        return command[e.binop];
+    }
+
+    // Wrote
     private Temp munchExp (CALL e) {
-
-	// stuff needed here
-
-	return frame.RV();
+        //How to implement this?  Parameter passing?
+//        String [] regs = {"%rdi", "%rsi", "%rdx", "%rcx"x, "%r8", "%r9"};
+        if (e.args.length() > 6) {
+            throw new UnsupportedOperationException("CALL");
+        }
+        Iterator<Exp> iterator = e.args.iterator();
+        for (int i = 0; i < e.args.length(); i++) {
+            emit (new OPERInstr (tab + "movq\t`s0, `d0\n", new TempList(frame.parameterRegs[i]), new TempList(munchExp(iterator.next()))));
+        }
+        TempList dstList = new TempList();
+        for (Temp temp : frame.callersaves) {
+            dstList = new TempList(dstList, new TempList(temp));
+        }
+        emit (new OPERInstr (tab + "call\t" + ((NAME) e.func).label + "\n", dstList, null));
+	    return frame.RV();
     }
 }
