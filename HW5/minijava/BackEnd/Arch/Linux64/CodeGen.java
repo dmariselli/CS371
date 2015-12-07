@@ -148,14 +148,23 @@ class CodeGen {
     	Temp t = new Temp();
         Temp left = munchExp(e.left);
         emit (new OPERInstr (tab + "movq\t`s0, `d0\n", new TempList(t), new TempList(left)));
+        if (BINOPHelper(e).equalsIgnoreCase("idivq") || BINOPHelper(e).equalsIgnoreCase("modq")) {
+            emit (new MOVEInstr (tab + "movq\t`s0, `d0\n", frame.RAX, t));
+            emit (new OPERInstr (tab + "movq\t$0,`d0\n", new TempList(frame.RDX), null));
+            emit (new OPERInstr (tab + "idivq\t`s0, `d0\n", new TempList(frame.RAX, frame.RDX), new TempList(munchExp(e.right), frame.RAX)));
+            if (BINOPHelper(e).equalsIgnoreCase("idivq")) {
+                return frame.RAX;
+            } else {
+                return frame.RDX;
+            }
+        }
         emit (new OPERInstr (tab + BINOPHelper(e) + "\t`s0, `d0\n", new TempList(t), new TempList(munchExp(e.right), t)));
 	    return t;
     }
 
     // Wrote
     private String BINOPHelper(BINOP e) {
-        //TODO: handle div and mod
-        //ask about shifts - no shifts
+        // modq is not a real instruction. It is only used to help differentiate between a regular div and a mod
         String[] command = {"addq", "subq", "imulq", "idivq", "andq", "orq", "shlq", "shrq", "sarq", "xorq", "modq"};
         return command[e.binop];
     }
