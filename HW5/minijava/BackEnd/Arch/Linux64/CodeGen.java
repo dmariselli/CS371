@@ -162,14 +162,13 @@ class CodeGen {
 
     // Wrote
     private Temp munchExp (CALL e) {
-        //How to implement this?  Parameter passing?
-//        String [] regs = {"%rdi", "%rsi", "%rdx", "%rcx"x, "%r8", "%r9"};
         if (e.args.length() > 6) {
             throw new UnsupportedOperationException("CALL");
         }
         Iterator<Exp> iterator = e.args.iterator();
         for (int i = 0; i < e.args.length(); i++) {
-            emit (new OPERInstr (tab + "movq\t`s0, `d0\n", new TempList(frame.parameterRegs[i]), new TempList(munchExp(iterator.next()))));
+            Temp src = munchExp(iterator.next());
+            emit (new MOVEInstr (tab + "movq\t`s0, `d0\n", frame.parameterRegs[i], src));
         }
         TempList dstList = new TempList();
         for (Temp temp : frame.callersaves) {
