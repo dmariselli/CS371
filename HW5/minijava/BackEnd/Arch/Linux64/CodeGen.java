@@ -151,7 +151,7 @@ class CodeGen {
         if (BINOPHelper(e).equalsIgnoreCase("idivq") || BINOPHelper(e).equalsIgnoreCase("modq")) {
             emit (new MOVEInstr (tab + "movq\t`s0, `d0\n", frame.RAX, t));
             emit (new OPERInstr (tab + "movq\t$0,`d0\n", new TempList(frame.RDX), null));
-            emit (new OPERInstr (tab + "idivq\t`s0, `d0\n", new TempList(frame.RAX, frame.RDX), new TempList(munchExp(e.right), frame.RAX)));
+            emit (new OPERInstr (tab + "idivq\t`s0, `d0\n", new TempList(frame.RAX, frame.RDX), new TempList(munchExp(e.right), frame.RAX, frame.RDX)));
             if (BINOPHelper(e).equalsIgnoreCase("idivq")) {
                 return frame.RAX;
             } else {
@@ -175,15 +175,17 @@ class CodeGen {
             throw new UnsupportedOperationException("CALL");
         }
         Iterator<Exp> iterator = e.args.iterator();
+        TempList regTemps = new TempList();
         for (int i = 0; i < e.args.length(); i++) {
             Temp src = munchExp(iterator.next());
-            emit (new MOVEInstr (tab + "movq\t`s0, `d0\n", frame.parameterRegs[i], src));
+            regTemps = new TempList(regTemps, new TempList(frame.parameterRegs[i]));
+            emit (new MOVEInstr (tab + "movq\t`s0, `d0\n", regTemps.get(i), src));
         }
         TempList dstList = new TempList();
         for (Temp temp : frame.callersaves) {
             dstList = new TempList(dstList, new TempList(temp));
         }
-        emit (new OPERInstr (tab + "call\t" + ((NAME) e.func).label + "\n", dstList, null));
+        emit (new OPERInstr (tab + "call\t" + ((NAME) e.func).label + "\n", dstList, regTemps));
 	    return frame.RV();
     }
 }
